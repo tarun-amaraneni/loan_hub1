@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .error-message {
+        color: red;
+        display: none;
+    }
+    .save-btn, .view-btn {
+        background-color: #4CAF50; /* Green */
+        border: none;
+        color: white;
+        padding: 6px 10px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 12px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-left: 7%;
+    }
+    .view-btn {
+        background-color: #008CBA; /* Blue */
+    }
+    .save-btn:hover {
+        background-color: #45A049;
+    }
+    .view-btn:hover {
+        background-color: #007BB5;
+    }
+    .submit-button:hover {
+        background-color: #00FF15;
+        color: black;
+    }
+    .editable {
+        border: none;
+        background: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        font-size: 14px;
+        margin: 0;
+        padding: 8px 10px; /* Adjust this to match the padding of table cells */
+        display: inline-block;
+    }
+    .editable:focus {
+        outline: none;
+        border: 2px solid #4CAF50;
+    }
+    .alert {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px 40px;
+        border-radius: 10px;
+        color: #fff;
+        opacity: 0.95;
+        z-index: 1000;
+        font-size: 18px;
+        text-align: center;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .alert-success {
+        background-color: #28A745;
+    }
+    .alert-danger {
+        background-color: #DC3545;
+    }
+    .alert-warning {
+    background-color: #FFC107;
+    color: #212529;
+    font-size: 16px; /* Larger font */
+    padding: 10px; /* More padding */
+    border-radius: 5px; /* Rounded corners */
+}
+#code_suggestions {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for a floating effect */
+        position: absolute;
+        z-index: 1000;
+        margin-top: 5px;
+        width: 200px;
+        max-height: 150px; /* Limit the height */
+        overflow-y: auto; /* Scrollable if too many options */
+    }
+
+    #code_suggestions option {
+        padding: 8px 10px;
+        background-color: #fff;
+        border-bottom: 1px solid #eee; /* Subtle divider between options */
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    #code_suggestions option:hover {
+        background-color: #f0f0f0; /* Highlight on hover */
+        color: #333; /* Ensure text is readable on hover */
+    }
+
+    #code_suggestions option:last-child {
+        border-bottom: none; /* Remove border for the last item */
+    }
+</style>
+<div class="content">
+    <form class="center-form1" method="post" action="{% url 'admindashboard' %}">
+        {% csrf_token %}
+        <div>
+    <input type="text" id="gen_no_input" name="gen_no" placeholder="Gen.No." class="input-box1" autocomplete="off">
+    
+    <!-- Dropdown for suggestions -->
+    <select id="code_suggestions" class="input-box1" size="5" style="display:none; position:absolute; width:200px;"></select>
+
+    <button type="submit" class="submit-button">Submit</button>
+</div>
+        <input type="text" name="name" placeholder="Gen_No" class="input-box1" value="{{ gen_no }}" readonly>
+        <input type="text" name="name" placeholder="Name" class="input-box1" value="{{ user_name }}" readonly>
+    </form>
+    <h3>Receipts</h3>
+    <div class="table-container1">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th style="color: yellow;">Type of Receipt</th>
+                    <th style="color: yellow;">Ref</th>
+                    <th style="color: yellow;">Balance</th>
+                    <th>Cash</th>
+                    <th>Bank1</th>
+                    <th>Bank2</th>
+                    <th>Adj</th>
+                    <th style="width:140px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in loans %}
+                <tr style="background-color: #F2F2F2">
+                    <td>{{ item.loan_type }}</td>
+                    <td>{{ item.loan.code }}</td>
+                    <td>{% if item.balance != 0 %}{{ item.balance }}{% endif %}</td>
+                    <td>{% if item.loan %}<input name="cash" class="editable" contenteditable="true">{% endif %}</td>
+                    <td>{% if item.loan %}<input class="editable" contenteditable="true" name="bank1">{% endif %}</td>
+                    <td>{% if item.loan %}<input class="editable" contenteditable="true" name="bank2">{% endif %}</td>
+                    <td>{% if item.loan %}<input class="editable" contenteditable="true" name="adj">{% endif %}</td>
+                    <td>
+                        {% if item.loan %}
+                        <button type="button" class="save-btn" data-loan-id="{{ item.loan.id }}">Save</button>
+                        <button class="view-btn">
+                            <a href="{% url 'mtl_collection' item.loan.id %}" style="text-decoration: none; color: white;">View</a>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h3>New Table</h3>
+    <div class="table-container2">
+        <form id="newTableForm" method="post" action="{% url 'submit_new_table' %}">
+            {% csrf_token %}
+            <input type="hidden" name="gen_no" value="{{ gen_no }}">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        
+                        <th>Loan Type</th>
+                        <th>Amount</th>
+                        <th>Cash</th>
+                        <th>Online</th>
+                        <th>Bank1</th>
+                        <th>Bank2</th>
+                        <th>Adj</th>
+                        
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <select name="Loan Type"class="editable" placeholder="Loan Type">
+                                <option value="">Select Loan Type</option>
+                                <option value="MTL Collection">MTL Collection</option>
+                                <option value="FDL Collection">FDL Collection</option>
+                                <option value="KVP/NSC Collection">KVP/NSC Collection</option>
+
+                                <option value="FD Collections">FD Collections</option>
+                                <option value="Thrift Fund Collection">Thrift Fund Collection</option>
+                                <option value="Welfare Collection">Welfare Collection</option>
+                                <option value="Admission Fees">Admission Fees</option>
+                                <option value="Other Receipts">Other Receipts</option>
+                                <option value="Cash Withdrawals">Cash Withdrawals</option>
+                            </select>
+                        </td>
+                        
+                        
+                        <td><input type="text"class="editable" name="Amount" placeholder="Amount"></td>
+                        <td><input type="text" class="editable"name="Cash" placeholder="Cash"></td>
+                        <td><input type="text"class="editable" name="Online" placeholder="Online"></td>
+                        <td><input type="text"class="editable" name="Bank1" placeholder="Bank1"></td>
+                        <td><input type="text" class="editable"name="Bank2" placeholder="Bank2"></td>
+                        <td><input type="text" class="editable"name="Adj" placeholder="Adj"></td>
+                        <td>
+                            <button type="submit" class="submit-btn">Submit</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+    $('#gen_no_input').on('keyup', function(){
+        var query = $(this).val();
+        if(query.length > 1) { // Only trigger AJAX after 2 characters
+            $.ajax({
+                url: '{% url "search_user_codes" %}',
+                data: {
+                    'term': query
+                },
+                dataType: 'json',
+                success: function(data){
+                    var dropdown = $('#code_suggestions');
+                    dropdown.empty();
+                    if(data.length) {
+                        data.forEach(function(code){
+                            dropdown.append('<option value="' + code + '">' + code + '</option>');
+                        });
+                        dropdown.show();
+                    } else {
+                        dropdown.hide();
+                        showAlert('No Gen No. found matching your input.', 'warning');
+                    }
+                },
+                error: function() {
+                    dropdown.hide();
+                    showAlert('An error occurred while searching. Please try again.', 'danger');
+                }
+            });
+        } else {
+            $('#code_suggestions').hide();
+        }
+    });
+        
+        // Handle suggestion click
+        $('#code_suggestions').on('click', 'option', function() {
+            $('#gen_no_input').val($(this).val());
+            $('#code_suggestions').hide();
+        });
+    });
+        document.addEventListener('DOMContentLoaded', function () {
+            const saveButtons = document.querySelectorAll('.save-btn');
+    
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+    
+                // Assign background colors based on the type of message
+                if (type === 'success') {
+                    alertDiv.style.backgroundColor = 'green'; // Green for success
+                    alertDiv.style.color = 'white'; // Ensure text is readable
+                } else if (type === 'danger') {
+                    alertDiv.style.backgroundColor = 'red'; // Red for error
+                    alertDiv.style.color = 'white';
+                } else if (type === 'warning') {
+                    alertDiv.style.backgroundColor = 'yellow'; // Yellow for warning
+                    alertDiv.style.color = 'black'; // Black text for yellow warning
+                }
+    
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                document.body.appendChild(alertDiv);
+    
+                // Remove the alert after 3 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            }
+    
+            function clearInputFields(row) {
+                row.querySelector('input[name="cash"]').value = '';
+                row.querySelector('input[name="bank1"]').value = '';
+                row.querySelector('input[name="bank2"]').value = '';
+                row.querySelector('input[name="adj"]').value = '';
+            }
+    
+            function showLoadingIndicator() {
+                const loader = document.createElement('div');
+                loader.className = 'alert alert-warning';
+                loader.textContent = 'Please wait...';
+                loader.style.backgroundColor = 'yellow'; // Set background color to yellow
+                loader.style.color = 'black';
+                document.body.appendChild(loader);
+                return loader;
+            }
+    
+            function hideLoadingIndicator(loader) {
+                loader.remove();
+            }
+            
+            saveButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const loanId = this.getAttribute('data-loan-id');
+                    const row = this.closest('tr');
+                    const cash = row.querySelector('input[name="cash"]').value;
+                    const bank1 = row.querySelector('input[name="bank1"]').value;
+                    const bank2 = row.querySelector('input[name="bank2"]').value;
+                    const adj = row.querySelector('input[name="adj"]').value;
+                    if (!cash && !bank1 && !bank2 && !adj) {
+                        showAlert('Please enter at least one amount in Cash, Bank1, Bank2, or Adj.', 'warning');
+                        return; // Stop further execution
+                    }
+                    if (!isNaN(cash) && !isNaN(bank1) && !isNaN(bank2) && !isNaN(adj)) {
+                        const formData = new FormData();
+                        formData.append('loan_id', loanId);
+                        formData.append('cash', cash);
+                        formData.append('bank1', bank1);
+                        formData.append('bank2', bank2);
+                        formData.append('adj', adj);
+    
+                        const loader = showLoadingIndicator();
+    
+                        fetch('{% url "admindashboard" %}', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            hideLoadingIndicator(loader);
+                            if (data.status === 'success') {
+                                showAlert('Loan details updated successfully!', 'success');
+                                clearInputFields(row);
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 3000);
+                            } else {
+                                showAlert('Error: ' + data.message, 'danger');
+                            }
+                        })
+                        .catch(error => {
+                            hideLoadingIndicator(loader);
+                            console.error('Error:', error);
+                            showAlert('An error occurred while updating loan details.', 'danger');
+                        });
+                    } else {
+                        showAlert('Please enter valid numeric values.', 'warning');
+                    }
+                });
+            });
+    
+            // New Table Form Validation
+            const newTableForm = document.getElementById('newTableForm');
+            newTableForm.addEventListener('submit', function (event) {
+                event.preventDefault();  // Prevent form from submitting the traditional way
+    
+                const formData = new FormData(newTableForm);
+    
+                const loanType = formData.get('Loan Type');
+                const amount = parseFloat(formData.get('Amount')) || 0;
+                const cash = parseFloat(formData.get('Cash')) || 0;
+                const bank1 = parseFloat(formData.get('Bank1')) || 0;
+                const bank2 = parseFloat(formData.get('Bank2')) || 0;
+                const online = parseFloat(formData.get('Online')) || 0;
+                const adj = parseFloat(formData.get('Adj')) || 0;
+    
+                // Validation logic
+                if (!loanType) {
+                    showAlert("Please select a Loan Type.", "danger");
+                    return;
+                }
+                if (!amount) {
+                    showAlert("Please enter the Amount.", "danger");
+                    return;
+                }
+                if (!cash && !bank1 && !bank2 && !online && !adj) {
+                    showAlert("Please enter at least one of Cash, Bank1, Bank2, Online, or Adj.", "danger");
+                    return;
+                }
+                const totalEntered = cash + bank1 + bank2 + online + adj;
+    
+                if (totalEntered !== amount) {
+                    showAlert(`Amount ${amount} ≠ ${totalEntered}.`, 'danger');
+                    return;
+                }
+                // Show the loading indicator
+                const loader = showLoadingIndicator();
+    
+                // Send AJAX request to submit the form
+                fetch('{% url "submit_new_table" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingIndicator(loader);
+                    if (data.status === 'success') {
+                        showAlert('Loan added successfully!', 'success');
+                        setTimeout(() => {
+                            window.location.reload();  // Reload after success
+                        }, 2000);
+                    } else {
+                        showAlert('Error: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    hideLoadingIndicator(loader);
+                    showAlert('An error occurred while adding the Loan.', 'danger');
+                    console.error('Error:', error);
+                });
+            });
+    
+        });
+    </script>
+    
+        
+{% endblock %}
+
+
+

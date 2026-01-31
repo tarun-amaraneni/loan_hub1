@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>📥 All Receipts</h2>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Name</th>
+        <th>Loan Type</th>
+        <th>Amount</th>
+        <th>Cash</th>
+        <th>Bank1</th>
+        <th>Bank2</th>
+        <th>Adj</th>
+    </tr>
+
+    {% for r in receipts %}
+    <tr>
+        <td>{{ r.created_at|date:"Y-m-d" }}</td>
+        <td>{{ r.loan.name }}</td>
+        <td>{{ r.loan.type_of_loan }}</td>
+        <td>{{ r.total_payment }}</td>
+        <td>{{ r.cash }}</td>
+        <td>{{ r.bank1 }}</td>
+        <td>{{ r.bank2 }}</td>
+        <td>{{ r.adj }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

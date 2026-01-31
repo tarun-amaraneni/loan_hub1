@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>💸 All Payments</h2>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Name</th>
+        <th>Loan Type</th>
+        <th>Amount</th>
+        <th>Cash</th>
+        <th>Bank1</th>
+        <th>Bank2</th>
+        <th>Adj</th>
+    </tr>
+
+    {% for p in payments %}
+    <tr>
+        <td>{{ p.created_at|date:"Y-m-d" }}</td>
+        <td>{{ p.name }}</td>
+        <td>{{ p.type_of_loan }}</td>
+        <td>{{ p.amount }}</td>
+        <td>{{ p.cash }}</td>
+        <td>{{ p.bank1 }}</td>
+        <td>{{ p.bank2 }}</td>
+        <td>{{ p.adj }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

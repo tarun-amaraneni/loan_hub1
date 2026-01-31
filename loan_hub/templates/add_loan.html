@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+<div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+
+    <h2>💰 Add Loan</h2>
+
+    <form method="POST" action="{% url 'add_loan' %}">
+        {% csrf_token %}
+
+        <table id="loanTable" style="width:100%; border-collapse:collapse; min-width:900px;">
+            <thead style="background:#34495e; color:#fff;">
+                <tr>
+                    <th>Gen No</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Interest</th>
+                    <th>Loan Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td><input type="text" name="gen_no" class="genInput" required></td>
+                    <td><input type="text" class="nameInput" readonly></td>
+
+                    <td>
+                        <select name="type_of_loan" required>
+                            <option value="">Select</option>
+                            <option value="MTL LOAN">MTL LOAN</option>
+                            <option value="FDL LOAN">FDL LOAN</option>
+                            <option value="KVP/NSC LOAN">KVP/NSC LOAN</option>
+                        </select>
+                    </td>
+
+                    <td><input type="number" name="amount" required></td>
+
+                    <td><input type="number" name="interest" required></td>
+
+                    <td>
+                        <input type="date" name="loan_date" required>
+                    </td>
+
+                    <td>
+                        <button type="submit"
+                                style="background:#22c55e;color:white;padding:6px 14px;border:none;border-radius:6px;">
+                            Save Loan
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </form>
+</div>
+{% endblock %}

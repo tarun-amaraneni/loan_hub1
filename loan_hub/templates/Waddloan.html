@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Loan</title>
+    <link rel="stylesheet" href="{% static 'css/adduser.css' %}">
+</head>
+<body>
+    {% block title %}Add Loan{% endblock %}
+    {% block content %}
+    <div class="content">
+        <h2>Add Loan</h2>
+        <form id="loan-form" class="center-form" method="post" action="{% url 'addloan' %}">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="gen-no">Gen.no</label>
+                    <input type="text" id="gen-no"  name="gen_no" class="input-box3" value="{{ form.gen_no.value|default_if_none:'' }}">
+                    <ul class="loan-error">
+                        {% for error in form.gen_no.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label for="Amount">Amount</label>
+                    <input type="number" id="Amount" placeholder="Amount" name="amount" class="input-box3" value="{{ form.amount.value }}">
+                    <ul class="loan-error">
+                        {% for error in form.amount.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="Cash">Cash</label>
+                    <input type="tel" id="Cash" placeholder="Cash" name="cash" class="input-box3" value="{{ form.Cash.value }}">
+                    <ul class="loan-error">
+                        {% for error in form.cash.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label for="Online">Online</label>
+                    <input type="text" id="Online" placeholder="Online" name="online" class="input-box3" value="{{ form.Online.value }}">
+                    <ul class="loan-error">
+                        {% for error in form.online.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="Bank1">Bank1</label>
+                    <input type="text" id="Bank1" placeholder="Bank1" name="bank1" class="input-box3" value="{{ form.Bank1.value }}">
+                    <ul class="loan-error">
+                        {% for error in form.bank1.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label for="Bank2">Bank2</label>
+                    <input type="text" id="Bank2" placeholder="Bank2" name="bank2" class="input-box3" value="{{ form.Bank2.value }}">
+                    <ul class="loan-error">
+                        {% for error in form.bank2.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="Adj">Adj</label>
+                    <input type="text" id="Adj" placeholder="Adj" name="adj" class="input-box3" value="{{ form.Adj.value }}">
+                    <ul class="loan-error">
+                        {% for error in form.adj.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label for="type_of_loan">Loan Type</label>
+                    <select id="type_of_loan" name="type_of_loan" class="input-box3">
+                        {% for choice in form.fields.type_of_loan.choices %}
+                            <option value="{{ choice.0 }}" {% if form.type_of_loan.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                        {% endfor %}
+                    </select>
+                    <ul class="loan-error">
+                        {% for error in form.type_of_loan.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <button type="submit" class="submit-button">Submit</button>
+        </form>
+    </div>
+    {% endblock %}
+</body>
+</html>

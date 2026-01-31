@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            background-image: url('{% static "images/Loan.jpg" %}');
+            
+        }
+        
+        .container .input-group {
+            position: relative;
+            margin-bottom: 15px; 
+        }
+      
+        .container .input-group input {
+            padding-right: 35px;
+        }
+        
+        .container .input-group .toggle-password {
+            position: absolute;
+            right: 5px;
+            top: 68%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+        
+        .container .input-group .toggle-password img {
+            width: 20px; 
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h2>Login</h2>
+            {% if error %}
+                <p style="color: red;">{{ error }}</p>
+            {% endif %}
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                    <i class="toggle-password" onclick="togglePassword(this)">
+                        <img src="{% static 'images/hide.png' %}" alt="hide Password" class="hide-password-img">
+                        <img src="{% static 'images/show.png' %}" alt="show Password" class="show-password-img" style="display: none;">
+                    </i>
+                </div>
+                
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(icon) {
+            const passwordField = document.getElementById('password');
+            const showPasswordImg = icon.querySelector('.hide-password-img');
+            const hidePasswordImg = icon.querySelector('.show-password-img');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                showPasswordImg.style.display = 'none';
+                hidePasswordImg.style.display = 'inline';
+            } else {
+                passwordField.type = 'password';
+                showPasswordImg.style.display = 'inline';
+                hidePasswordImg.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

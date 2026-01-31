@@ -1,0 +1,631 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* ===== ERROR & ALERT ===== */
+.error-message { color: red; display: none; }
+
+
+/* Left-align table headings only */
+.table-heading {
+    text-align: left;
+    margin-left: 20px; /* optional padding from left */
+}
+
+/* ===== UNIFIED DROPDOWN STYLE (Loans + Receipts + Payments) ===== */
+.select-ui {
+    width: 100% !important;
+    height: 30px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background-color: #fff;
+    font-size: 13px;
+}
+
+/* Select2 container */
+.select2-container {
+    width: 100% !important;
+}
+
+/* Select2 selection box */
+.select2-container--default .select2-selection--single {
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    display: flex;
+    align-items: center;
+}
+
+/* Selected text */
+.select2-container--default .select2-selection--single
+.select2-selection__rendered {
+    line-height: 28px;
+    font-size: 13px;
+    padding-left: 8px;
+}
+
+/* Arrow */
+.select2-container--default .select2-selection--single
+.select2-selection__arrow {
+    height: 28px;
+}
+
+/* Focus effect */
+.select2-container--default.select2-container--focus
+.select2-selection--single {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+}
+
+
+.alert {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px 40px;
+    border-radius: 10px;
+    color: #fff;
+    opacity: 0.95;
+    z-index: 1000;
+    font-size: 18px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.alert-success { background-color: #28A745; }
+.alert-danger { background-color: #ff0019; }
+.alert-warning { background-color: yellow; color: #212529; font-size:16px; padding:10px; border-radius:5px; }
+
+/* ===== GEN NO SEARCH DROPDOWN ===== */
+#code_suggestions {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    position: absolute;
+    z-index: 1000;
+    margin-top: 5px;
+    width: 200px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+#code_suggestions option { padding: 8px 10px; cursor: pointer; }
+#code_suggestions option:hover { background-color: #f0f0f0; color: #333; }
+#code_suggestions option:last-child { border-bottom: none; }
+
+/* ===== BUTTONS ===== */
+.save-btn, .view-btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 4px 2px;
+}
+.view-btn { background-color: #008CBA; }
+.save-btn:hover { background-color: #45A049; }
+.view-btn:hover { background-color: #007BB5; }
+.submit-button:hover { background-color: green; color: #fff; }
+
+/* ===== EDITABLE FIELDS ===== */
+.editable {
+    border: none;
+    background: none;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    font-size: 14px;
+    padding: 8px 10px;
+}
+.editable:focus { outline: none; border: 2px solid #4CAF50; }
+
+/* ===== TABLE CONTAINERS ===== */
+.table-container1, .table-container2 {
+    margin: 20px auto;
+    width: 95%;
+    overflow-x: auto;
+}
+
+/* ===== MAIN TABLE STYLING ===== */
+.styled-table {
+    width: 100%;
+    margin: auto;
+    border-collapse: collapse;
+    text-align: center;
+}
+.styled-table th, .styled-table td {
+    padding: 10px;
+    text-align: center;
+}
+.styled-table th {
+    background-color:#354A5E;
+    color: #fff;
+}
+.styled-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* ===== HISTORY TABLES ===== */
+#receiptsHistory, #paymentsHistory {
+    width: 95%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    text-align: center;
+}
+#receiptsHistory th, #receiptsHistory td,
+#paymentsHistory th, #paymentsHistory td {
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    vertical-align: middle;
+    text-align: center;
+}
+#receiptsHistory th, #paymentsHistory th {
+    background-color: #354A5E;
+    color: #fff;
+}
+#receiptsHistory tbody tr:nth-child(even),
+#paymentsHistory tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+#receiptsHistory tbody td, #paymentsHistory tbody td {
+    font-size: 14px;
+}
+
+/* ===== HEADINGS ===== */
+h3 {
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
+/* ===== COMPACT TABLE ROW HEIGHT ===== */
+
+/* Header cells */
+.styled-table th,
+#receiptsHistory th,
+#paymentsHistory th {
+    padding: 6px 8px;          /* reduce vertical padding */
+    line-height: 1.2;
+    font-size: 13px;
+}
+
+/* Body cells */
+.styled-table td,
+#receiptsHistory td,
+#paymentsHistory td {
+    padding: 5px 8px;          /* 🔽 this controls row height */
+    line-height: 1.2;
+    font-size: 13px;
+}
+
+/* Inputs & selects inside table */
+.styled-table input,
+.styled-table select,
+.select2-container--default .select2-selection--single {
+    height: 30px;              /* reduce input height */
+    padding: 4px 6px;
+    font-size: 13px;
+}
+
+/* Select2 text alignment fix */
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 28px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 28px;
+}
+
+</style>
+
+
+<div class="content">
+
+    <!-- GEN NO FORM -->
+    <form class="center-form1" method="post" action="{% url 'others' %}">
+        {% csrf_token %}
+        <div>
+            <input type="text" id="gen_no_input" name="gen_no" placeholder="Gen.No." class="input-box1" autocomplete="off">
+            <select id="code_suggestions" class="input-box1" size="5" style="display:none;"></select>
+            <button type="submit" class="submit-button" disabled>Submit</button>
+        </div>
+        <br>
+        <input type="text" placeholder="Gen_No" class="input-box1" value="{{ gen_no }}" readonly>
+        <input type="text" placeholder="Name" class="input-box1" value="{{ user_name }}" readonly>
+    </form>
+
+    <!-- RECEIPTS TABLE -->
+    <h3 class="table-heading">RECEIPTS 💰</h3>
+    <div class="table-container1">
+        <form id="receiptForm" method="post">
+            {% csrf_token %}
+            <table class="styled-table">
+            <thead>
+                <tr>
+                    <th style="color: yellow;">Date</th> <!-- new column -->
+                    <th style="color: yellow;">Receipt Type</th>
+                    <th style="color: yellow;">Amount</th>
+                    <th style="color: yellow;">Cash</th>
+                    <th style="color: yellow;">Bank1</th>
+                    <th style="color: yellow;">Bank2</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="date" name="date" class="editable"></td> <!-- new field -->
+                    <td>
+                        <select name="type_of_loan" class="editable">
+                            <option value="">Select Receipt</option>
+                            <option value="ADMISSION FEES">Admission Fees</option>
+                            <option value="OTHER RECEIPTS">Other Receipts</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="amount" class="editable" placeholder="Amount"></td>
+                    <td><input type="text" name="cash" class="editable" placeholder="Cash"></td>
+                    <td><input type="text" name="bank1" class="editable" placeholder="Bank1"></td>
+                    <td><input type="text" name="bank2" class="editable" placeholder="Bank2"></td>
+                    <td><button type="button" class="save-btn" id="addReceipt">Add Receipt</button></td>
+                </tr>
+            </tbody>
+
+            </table>
+        </form>
+    </div>
+
+    <!-- PAYMENTS TABLE -->
+    <h3 class="table-heading">PAYMENTS 💸</h3>
+    <div class="table-container2">
+        <form id="paymentForm" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="gen_no" value="{{ gen_no }}">
+            <table class="styled-table">
+                <thead>
+    <tr>
+        <th style="color: yellow;">Date</th> <!-- new column -->
+        <th style="color: yellow;">Loan Type</th>
+        <th style="color: yellow;">Amount</th>
+        <th style="color: yellow;">Cash</th>
+        <th style="color: yellow;">Bank1</th>
+        <th style="color: yellow;">Bank2</th>
+        <th>Actions</th>
+    </tr>
+</thead>
+<tbody>
+    <tr>
+        <td><input type="date" name="date" class="editable"></td> <!-- new field -->
+        <td>
+            <select name="type_of_loan" class="editable">
+                <option value="">Select Payment</option>
+                <option value="SALARY PAID">Salary Paid</option>
+                <option value="OFFICE EXPENSES">Office Expenses</option>
+                <option value="OTHER PAYMENTS">Other Payments</option>
+            </select>
+        </td>
+        <td><input type="text" name="amount" class="editable" placeholder="Amount"></td>
+        <td><input type="text" name="cash" class="editable" placeholder="Cash"></td>
+        <td><input type="text" name="bank1" class="editable" placeholder="Bank1"></td>
+        <td><input type="text" name="bank2" class="editable" placeholder="Bank2"></td>
+        <td><button type="button" class="save-btn" id="addPayment">Add Payment</button></td>
+    </tr>
+</tbody>
+
+            </table>
+        </form>
+    </div>
+    <h3 class="table-heading">RECEIPTS HISTORY 📄</h3>
+<table class="styled-table" id="receiptsHistory">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Ref</th>
+            <th>Type</th>
+            <th>Cash</th>
+            <th>Bank1</th>
+            <th>Bank2</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<h3 class="table-heading">PAYMENTS HISTORY 📄</h3>
+<table class="styled-table" id="paymentsHistory">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Ref</th>
+            <th>Type</th>
+            <th>Cash</th>
+            <th>Bank1</th>
+            <th>Bank2</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function () {
+
+
+    // ---------- DEFAULT DATE = TODAY ----------
+const today = new Date().toISOString().split('T')[0];
+
+$('input[type="date"]').each(function () {
+    if (!$(this).val()) {
+        $(this).val(today);
+    }
+});
+
+    // ---------------- GEN NO AUTOLOAD + SEARCH ----------------
+    let autoGenNo = "{{ gen_no|default:'' }}" || new URLSearchParams(window.location.search).get('gen_no');
+    if (autoGenNo) {
+        $('#gen_no_input').val(autoGenNo).prop('readonly', true);
+        $('#code_suggestions').hide();
+        $('.submit-button').prop('disabled', false);
+
+        // 🔹 Call this to load existing records immediately
+        loadExistingRecords(autoGenNo);
+    }
+
+    $('#gen_no_input').on('keyup', function () {
+        if ($(this).prop('readonly')) return;
+        const query = $(this).val();
+        if (query.length < 2) { $('#code_suggestions').hide(); $('.submit-button').prop('disabled', true); return; }
+        $.ajax({
+            url: '{% url "search_user_codes" %}',
+            data: { term: query },
+            dataType: 'json',
+            success: function (data) {
+                const dropdown = $('#code_suggestions');
+                dropdown.empty();
+                if (data.length) {
+                    data.forEach(user => dropdown.append(`<option value="${user.code}">${user.code} - [${user.name}]</option>`));
+                    dropdown.show();
+                } else {
+                    dropdown.hide();
+                    showAlert('No Gen No found', 'warning');
+                }
+            },
+            error: function() { showAlert('Search failed', 'danger'); }
+        });
+    });
+
+    $('#code_suggestions').on('click', 'option', function () {
+        const selectedGenNo = $(this).val();
+        $('#gen_no_input').val(selectedGenNo).prop('readonly', true);
+        $('#code_suggestions').hide();
+        $('.submit-button').prop('disabled', false);
+
+        // 🔹 Call this to load records for the selected Gen No
+        loadExistingRecords(selectedGenNo);
+    });
+
+    // Make dropdowns searchable
+$('#receiptForm select[name="type_of_loan"]').select2({
+    placeholder: "Select Receipt Type",
+    allowClear: true,
+    width: '100%'
+});
+
+$('#paymentForm select[name="type_of_loan"]').select2({
+    placeholder: "Select Payment Type",
+    allowClear: true,
+    width: '100%'
+});
+
+
+// Receipts dropdown (search + new option)
+$('#receiptForm select[name="type_of_loan"]').select2({
+    placeholder: "Select or type Receipt Type",
+    tags: true,          // allows new options
+    allowClear: true,
+    width: '100%',
+    createTag: function(params) {
+        return {
+            id: params.term,
+            text: params.term,
+            newOption: true
+        }
+    }
+}).on('select2:select', function(e) {
+    const data = e.params.data;
+    if (data.newOption) {
+        // the new value typed is now selected
+        $(this).val(data.id).trigger('change');
+    }
+});
+
+// Payments dropdown (search + new option)
+$('#paymentForm select[name="type_of_loan"]').select2({
+    placeholder: "Select or type Payment Type",
+    tags: true,
+    allowClear: true,
+    width: '100%',
+    createTag: function(params) {
+        return {
+            id: params.term,
+            text: params.term,
+            newOption: true
+        }
+    }
+}).on('select2:select', function(e) {
+    const data = e.params.data;
+    if (data.newOption) {
+        $(this).val(data.id).trigger('change');
+    }
+});
+
+
+
+    // ---------------- ALERT FUNCTION ----------------
+    function showAlert(message, type) {
+        const alert = $(`<div class="alert alert-${type}">${message}</div>`);
+        $('body').append(alert);
+        setTimeout(() => alert.fadeOut(400, () => alert.remove()), 3000);
+    }
+
+    // ---------------- HELPER ----------------
+    function getGenNo() {
+        return $('#gen_no_input').val().trim();
+    }
+    function parseInput(input) {
+        let val = parseFloat(input.val());
+        return isNaN(val) ? 0 : val;
+    }
+
+    // ---------------- SAVE RECEIPT ----------------
+    $('#addReceipt').click(function() {
+        const gen_no = getGenNo();
+        if (!gen_no) { showAlert('Please select Gen No', 'warning'); return; }
+
+        const row = $('#receiptForm tbody tr');
+        const date = row.find('input[name="date"]').val();  // <-- NEW
+        if (!date) { showAlert('Please select a date', 'warning'); return; }
+
+        const type_of_loan = row.find('select[name="type_of_loan"]').val();
+        if (!type_of_loan) { showAlert('Please select Receipt Type', 'warning'); return; }
+
+        const cash   = parseInput(row.find('input[name="cash"]'));
+        const bank1  = parseInput(row.find('input[name="bank1"]'));
+        const bank2  = parseInput(row.find('input[name="bank2"]'));
+        const amount = parseInput(row.find('input[name="amount"]'));
+        const calculatedAmount = cash + bank1 + bank2;
+        if (amount !== calculatedAmount) { showAlert(`Amount should equal Cash + Bank1 + Bank2 (${calculatedAmount})`, 'warning'); return; }
+
+        $.ajax({
+            url: '{% url "others" %}',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'gen_no': gen_no,
+                'date': date,          // <-- send date
+                'type_of_loan': type_of_loan,
+                'transaction_type': 'RECEIPT',
+                'cash': cash,
+                'bank1': bank1,
+                'bank2': bank2
+            },
+            success: function(res) {
+                if (res.status === 'success') {
+                    showAlert('Receipt added successfully!', 'success');
+                    row.find('input, select').val('');
+                    loadExistingRecords(gen_no);
+                } else {
+                    showAlert(res.message || 'Failed to save receipt', 'danger');
+                }
+            },
+            error: function() { showAlert('Server error while saving receipt', 'danger'); }
+        });
+    });
+
+    // ---------------- SAVE PAYMENT ----------------
+    $('#addPayment').click(function() {
+        const gen_no = getGenNo();
+        if (!gen_no) { showAlert('Please select Gen No', 'warning'); return; }
+
+        const row = $('#paymentForm tbody tr');
+        const date = row.find('input[name="date"]').val();  // <-- NEW
+        if (!date) { showAlert('Please select a date', 'warning'); return; }
+
+        const type_of_loan = row.find('select[name="type_of_loan"]').val();
+        if (!type_of_loan) { showAlert('Please select Payment Type', 'warning'); return; }
+
+        const cash   = parseInput(row.find('input[name="cash"]'));
+        const bank1  = parseInput(row.find('input[name="bank1"]'));
+        const bank2  = parseInput(row.find('input[name="bank2"]'));
+        const amount = parseInput(row.find('input[name="amount"]'));
+        const calculatedAmount = cash + bank1 + bank2;
+        if (amount !== calculatedAmount) { showAlert(`Amount should equal Cash + Bank1 + Bank2 (${calculatedAmount})`, 'warning'); return; }
+
+        $.ajax({
+            url: '{% url "others" %}',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'gen_no': gen_no,
+                'date': date,          // <-- send date
+                'type_of_loan': type_of_loan,
+                'transaction_type': 'PAYMENT',
+                'cash': cash,
+                'bank1': bank1,
+                'bank2': bank2
+            },
+            success: function(res) {
+                if (res.status === 'success') {
+                    showAlert('Payment added successfully!', 'success');
+                    row.find('input, select').val('');
+                    loadExistingRecords(gen_no);
+                } else {
+                    showAlert(res.message || 'Failed to save payment', 'danger');
+                }
+            },
+            error: function() { showAlert('Server error while saving payment', 'danger'); }
+        });
+    });
+
+    // ---------------- LOAD EXISTING RECORDS FUNCTION ----------------
+    function loadExistingRecords(gen_no) {
+        if (!gen_no) return;
+
+        // Receipts
+// Receipts
+$.get("{% url 'fetch_receipts' %}", { gen_no: gen_no }, function(res) {
+    const tbody = $("#receiptsHistory tbody");
+    tbody.empty();
+
+    if (res.status === 'success' && res.receipts.length) {
+        res.receipts.forEach(r => {
+            tbody.append(`<tr>
+                <td>${r.created_at}</td>   <!-- ✅ Date -->
+                <td>${r.code}</td>
+                <td>${r.type_of_loan}</td>
+                <td>${r.cash}</td>
+                <td>${r.bank1}</td>
+                <td>${r.bank2}</td>
+                <td>${r.amount}</td>
+            </tr>`);
+        });
+    } else {
+        tbody.append('<tr><td colspan="7">No receipts found</td></tr>');
+    }
+});
+
+// Payments
+$.get("{% url 'fetch_payments' %}", { gen_no: gen_no }, function(res) {
+    const tbody = $("#paymentsHistory tbody");
+    tbody.empty();
+
+    if (res.status === 'success' && res.payments.length) {
+        res.payments.forEach(p => {
+            tbody.append(`<tr>
+                <td>${p.created_at}</td>   <!-- ✅ Date -->
+                <td>${p.code}</td>
+                <td>${p.type_of_loan}</td>
+                <td>${p.cash}</td>
+                <td>${p.bank1}</td>
+                <td>${p.bank2}</td>
+                <td>${p.amount}</td>
+            </tr>`);
+        });
+    } else {
+        tbody.append('<tr><td colspan="7">No payments found</td></tr>');
+    }
+});
+
+
+    }
+
+});
+</script>
+
+
+{% endblock %}

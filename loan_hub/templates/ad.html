@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .error-message {
+        color: red;
+        display: none;
+    }
+    .save-btn, .view-btn {
+        background-color: #4CAF50; /* Green */
+        border: none;
+        color: white;
+        padding: 6px 10px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 12px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-left: 7%;
+    }
+    .view-btn {
+        background-color: #008CBA; /* Blue */
+    }
+    .save-btn:hover {
+        background-color: #45A049;
+    }
+    .view-btn:hover {
+        background-color: #007BB5;
+    }
+    .submit-button:hover {
+        background-color: #00FF15;
+        COLOR:BLACK;
+    }
+    .editable {
+        border: none;
+        background: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        font-size: 14px;
+        margin: 0;
+        padding: 8px 10px; /* Adjust this to match the padding of table cells */
+        display: inline-block;
+    }
+    .editable:focus {
+        outline: none;
+        border: 2px solid #4CAF50;
+    }
+    .alert {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px 40px;
+        border-radius: 10px;
+        color: #fff;
+        opacity: 0.95;
+        z-index: 1000;
+        font-size: 18px;
+        text-align: center;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .alert-success {
+        background-color: #28A745;
+    }
+    .alert-danger {
+        background-color: #DC3545;
+    }
+    .alert-warning {
+        background-color: #FFC107;
+        color: #212529;
+    }
+    /* td {
+        padding: 10px;
+        height: 30px;
+        min-width:100px;
+    } */
+</style>
+<div class="content">
+    <form class="center-form1" method="post" action="{% url 'admindashboard' %}">
+        {% csrf_token %}
+       <DIV>
+        <input type="text" name="gen_no" placeholder="Gen.No." class="input-box1">
+        <button type="submit" class="submit-button">Submit</button>
+        </DIV>
+        <input type="text" name="name" placeholder="Gen_No" class="input-box1" value="{{ gen_no }}" readonly>
+        <input type="text" name="name" placeholder="Name" class="input-box1" value="{{ user_name }}" readonly>
+    </form>
+    <h3>Receipts</h3>
+    <div class="table-container1">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th style="color: yellow;">Type of Receipt</th>
+                    <th style="color: yellow;">Ref</th>
+                    
+                    <th style="color: yellow;">Balance</th>
+                    <th>Cash</th>
+                    <th>Bank1</th>
+                    <th>Bank2</th>
+                    <th>Adj</th>
+                    <th style="width:140px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in loans %}
+                <tr style="background-color: #F2F2F2">
+                    <td>{{ item.loan_type }}</td>
+                    <td>{{ item.loan.code }}</td>
+                    
+                    <td>{% if item.balance != 0 %}{{ item.balance }}{% endif %}</td>
+                    <td>{% if item.loan %}<input  name="cash" class="editable" contenteditable="true">{% endif %}</td>
+                    <td>{% if item.loan %}<input  class="editable" contenteditable="true" name="bank1" >{% endif %}</td>
+                    <td>{% if item.loan %}<input  class="editable" contenteditable="true" name="bank2" >{% endif %}</td>
+                    <td>{% if item.loan %}<input class="editable" contenteditable="true" name="adj" >{% endif %}</td>
+                    <td>
+                        {% if item.loan %}
+                        <button type="button" class="save-btn" data-loan-id="{{ item.loan.id }}">Save</button>
+                        <button class="view-btn">
+                            <a href="{% url 'mtl_collection' item.loan.id %}" style="text-decoration: none; color: white;">View</a>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <h3>Payments</h3>
+    <div class="table-container1">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th style="color: yellow;">Type of Receipt</th>
+                    <th style="color: yellow;">Amount</th>
+                    <th>Cash</th>
+                    <th>Bank1</th>
+                    <th>Bank2</th>
+                    <th>Adj</th>
+                    <th style="width:140px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in payments %}
+                <tr style="background-color: hsl(0, 0%, 95%)">
+                    <td>{{ item.loan_type }}</td>
+                    <td><input type="text" name="amount" class="editable" value="{{ item.loan.amount }}"></td>
+                    <td><input type="text" name="cash" class="editable" value="{{ item.loan.cash }}"></td>
+                    <td><input type="text" name="bank1" class="editable" value="{{ item.loan.bank1 }}"></td>
+                    <td><input type="text" name="bank2" class="editable" value="{{ item.loan.bank2 }}"></td>
+                    <td><input type="text" name="adj" class="editable" value="{{ item.loan.adj }}"></td>
+                    <td>
+                        <button type="button" class="save-btn" data-loan-id="{{ item.loan.id }}">Submit</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+    const saveButtons = document.querySelectorAll('.save-btn');
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+    }
+
+    function clearInputFields(row) {
+        row.querySelector('input[name="cash"]').value = '';
+        row.querySelector('input[name="bank1"]').value = '';
+        row.querySelector('input[name="bank2"]').value = '';
+        row.querySelector('input[name="adj"]').value = '';
+    }
+
+    function showLoadingIndicator() {
+        const loader = document.createElement('div');
+        loader.className = 'alert alert-warning';
+        loader.textContent = 'Loading...';
+        document.body.appendChild(loader);
+        return loader;
+    }
+
+    function hideLoadingIndicator(loader) {
+        loader.remove();
+    }
+
+    saveButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const loanId = this.getAttribute('data-loan-id');
+            const row = this.closest('tr');
+            const cash = row.querySelector('input[name="cash"]').value;
+            const bank1 = row.querySelector('input[name="bank1"]').value;
+            const bank2 = row.querySelector('input[name="bank2"]').value;
+            const adj = row.querySelector('input[name="adj"]').value;
+
+            if (!isNaN(cash) && !isNaN(bank1) && !isNaN(bank2) && !isNaN(adj)) {
+                const formData = new FormData();
+                formData.append('loan_id', loanId);
+                formData.append('cash', cash);
+                formData.append('bank1', bank1);
+                formData.append('bank2', bank2);
+                formData.append('adj', adj);
+
+                const loader = showLoadingIndicator();
+
+                fetch('{% url "admindashboard" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingIndicator(loader);
+                    if (data.status === 'success') {
+                        showAlert('Loan details updated successfully!', 'success');
+                        clearInputFields(row);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else {
+                        showAlert('Error: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    hideLoadingIndicator(loader);
+                    console.error('Error:', error);
+                    showAlert('An error occurred while updating loan details.', 'danger');
+                });
+            } else {
+                showAlert('Please enter valid numeric values.', 'warning');
+            }
+        });
+    });
+});
+
+        </script>
+        
+{% endblock %}

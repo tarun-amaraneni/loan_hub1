@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    
+    
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+    {% block extra_css %}{% endblock %}
+    <style>
+        /* Sidebar styles */
+        .sidebar {
+            width: 220px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            transition: width 0.3s ease;
+           overflow-x: hidden;
+    overflow-y: auto;
+     scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        }
+        .sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+        .sidebar.hide {
+            width: 0;
+        }
+        .sidebar-header {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar-menu li a {
+            display: block;
+            padding: 6px 20px;
+            color: white;
+            text-decoration: none;
+        }
+        .sidebar-menu li a:hover {
+            background-color: #34495e;
+        }
+        /* Main content moves left/right based on sidebar */
+        .main-content {
+            margin-left: 220px;
+            transition: margin-left 0.3s ease;
+            padding: 20px;
+        }
+        .main-content.expanded {
+             margin-left: 100px; 
+              /* instead of 0 */
+    padding-left: 15px; /* optional */
+        }
+        /* Hamburger toggle button */
+        .toggle-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            width: 30px;
+            height: 25px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        /* Hamburger lines */
+        .toggle-btn div {
+            width: 100%;
+            height: 4px;
+            background-color: #ffffff;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .toggle-btn.toggled div {
+    background-color: #ff0000; /* Turns white after sidebar hides */
+}
+
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto; /* allow vertical scroll */
+}
+
+.main-content {
+    margin-left: 220px;
+    padding: 20px;
+    min-height: 100vh; /* ensures content can push page height */
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0; /* sidebar collapses on mobile */
+    }
+}
+
+
+    </style>
+</head>
+<body>
+    <!-- Hamburger button -->
+    <div class="toggle-btn" id="toggle-btn" aria-label="Toggle sidebar" role="button" tabindex="0">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header" style="position: sticky; top: 0; z-index: 20; background-color:#2c3e50; padding:15px; border-bottom:1px solid #34495e;">
+                <img src="{% static 'images/logo-l.jpeg' %}" alt="Logo Picture" style="height: 30px;" />
+            </div>
+        <ul class="sidebar-menu">
+            <li><a href="{% url 'loans' %}">📄 Loans</a></li>
+            <li><a href="{% url 'deposits' %}">💰 Deposits</a></li>
+            <li><a href="{% url 'others' %}">📦 Others</a></li>
+            <li class="nav-item">
+    <a href="{% url 'loanadd' %}">➕ Add Loan</a>
+</li>
+            <li><a href="{% url 'closed_loans' %}">✅ Closed Loans</a></li>
+            <li><a href="{% url 'cash_book' %}">📘 Cash Book</a></li>
+            <li class="nav-item">
+    <a href="{% url 'cash_withdrawals' %}" class="nav-link">
+        <i class="fas fa-money-bill-wave"></i>
+        <span>💸 Cash Transfers</span>
+    </a>
+</li>
+            <!-- <li><a href="{% url 'addloan' %}">➕ Add Loan</a></li> -->
+            <li><a href="{% url 'adduser' %}">👤 Add User</a></li>
+            <li><a href="{% url 'users' %}">👥 Users</a></li>
+
+            <li><a href="{% url 'reports' %}">📄 Reports Dashboard</a></li>
+            
+            <li><a href="{% url 'download_reports' %}">📊 Download Reports</a></li>
+
+
+            <li><a href="{% url 'intrest_rate' %}">📈 Interest Rate</a></li>
+
+            <li><a href="{% url 'upload_excel' %}">📤 Upload Excel</a></li>
+            <li><a href="{% url 'logout' %}">🚪 Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content" id="main-content">
+        <div class="header" style="height: 75px;">
+            <div class="app-name" style="line-height: 80px;">Loanhub</div>
+        </div>
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+    const toggleBtn = document.getElementById('toggle-btn');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('hide');
+        mainContent.classList.toggle('expanded');
+        toggleBtn.classList.toggle('toggled'); // toggle line color
+    });
+
+    // Optional: allow toggle by keyboard Enter/Space
+    toggleBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleBtn.click();
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,206 @@
+base.html
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+    {% block extra_css %}{% endblock %}
+
+    <style>
+        /* ---------- Global Styles ---------- */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f8;
+            color: #2c3e50;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* ---------- Sidebar ---------- */
+        .sidebar {
+            width: 220px;
+            background-color: #1e2a38;
+            color: #ffffff;
+            height: 100vh;
+            position: fixed;
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            scrollbar-width: none;
+        }
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+        .sidebar.hide {
+            width: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #2c3e50;
+        }
+        .sidebar-header img {
+            height: 40px;
+            border-radius: 5px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            color: #ffffff;
+            border-radius: 5px;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .sidebar-menu li a:hover {
+            background-color: #2e3b4e;
+            transform: translateX(3px);
+        }
+
+        /* ---------- Main Content ---------- */
+        .main-content {
+            margin-left: 220px;
+            transition: margin-left 0.3s ease, padding 0.3s ease;
+            padding: 25px 30px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .main-content.expanded {
+            margin-left: 100px;
+            padding-left: 20px;
+        }
+
+        .header {
+            height: 75px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #ffffff;
+            padding: 0 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .header .app-name {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #1e2a38;
+        }
+
+        /* ---------- Hamburger Button ---------- */
+        .toggle-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 35px;
+            height: 28px;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .toggle-btn div {
+            width: 100%;
+            height: 4px;
+            background-color: #1e2a38;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        .toggle-btn.toggled div {
+            background-color: #ff4c4c;
+        }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+            .sidebar {
+                width: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hamburger button -->
+    <div class="toggle-btn" id="toggle-btn" aria-label="Toggle sidebar" role="button" tabindex="0">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="{% static 'images/logo-l.jpeg' %}" alt="Logo Picture" />
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="{% url 'loans' %}">📄 Loans</a></li>
+            <li><a href="{% url 'deposits' %}">💰 Deposits</a></li>
+            <li><a href="{% url 'others' %}">📦 Others</a></li>
+            <li><a href="{% url 'loanadd' %}">➕ Add Loan</a></li>
+            <li><a href="{% url 'closed_loans' %}">✅ Closed Loans</a></li>
+            <li><a href="{% url 'cash_book' %}">📘 Cash Book</a></li>
+            <li><a href="{% url 'cash_withdrawals' %}">💸 Cash Transfers</a></li>
+            <li><a href="{% url 'adduser' %}">👤 Add User</a></li>
+            <li><a href="{% url 'users' %}">👥 Users</a></li>
+            <li><a href="{% url 'reports' %}">📄 Reports Dashboard</a></li>
+            <li><a href="{% url 'download_reports' %}">📊 Download Reports</a></li>
+            <li><a href="{% url 'intrest_rate' %}">📈 Interest Rate</a></li>
+            <li><a href="{% url 'upload_excel' %}">📤 Upload Excel</a></li>
+            <li><a href="{% url 'logout' %}">🚪 Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content" id="main-content">
+        <div class="header">
+            <div class="app-name">Loanhub</div>
+        </div>
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Toggle Script -->
+    <script>
+        const toggleBtn = document.getElementById('toggle-btn');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('hide');
+            mainContent.classList.toggle('expanded');
+            toggleBtn.classList.toggle('toggled');
+        });
+
+        toggleBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- break1 -->
+

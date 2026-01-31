@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ledger Book{% endblock %}
+
+{% block content %}
+<style>
+    .ledger-book-content{
+        overflow-y: auto;
+    }
+</style>
+<div class="ledger-book-content">
+    
+    <!-- Filter Form -->
+    <form method="get" action="{% url 'cash_book' %}">
+        <div class="filter-container">
+            <div class="filter-group">
+                <label for="month">Month:</label>
+                <select id="month" name="month">
+                    <option value="">Select Month</option>
+                    {% for month in months %}
+                        <option value="{{ month.month }}" {% if month.month|stringformat:"02d" == selected_month %}selected{% endif %}>
+                            {{ month|date:"F" }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="year">Year:</label>
+                <select id="year" name="year">
+                    <option value="">Select Year</option>
+                    {% for year in years %}
+                        <option value="{{ year.year }}" {% if year.year|stringformat:"Y" == selected_year %}selected{% endif %}>
+                            {{ year.year }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit">Filter</button>
+        </div>
+    </form>
+
+    <!-- Ledger Tables -->
+    <h1>Receipts Table</h1>
+    <div class="table-container">
+        {% for month_data in transactions_by_month %}
+            <h2>{{ month_data.month|date:"F Y" }}</h2>
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Loan</th>
+                        <th>Cash</th>
+                        <th>Bank 1</th>
+                        <th>Bank 2</th>
+                        <th>Adjustment</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                        {% if transaction.created_at|date:"F Y" == month_data.month|date:"F Y" %}
+                            <tr>
+                                <td>LN{{ transaction.loan_id }}</td>
+                                <td>{{ transaction.cash }}</td>
+                                <td>{{ transaction.bank1 }}</td>
+                                <td>{{ transaction.bank2 }}</td>
+                                <td>{{ transaction.adj }}</td>
+                                <td>{{ transaction.created_at|date:"d-m-Y" }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>{{ month_data.month|date:"F" }} Total</th>
+                        <td>{{ month_data.total_cash }}</td>
+                        <td>{{ month_data.total_bank1 }}</td>
+                        <td>{{ month_data.total_bank2 }}</td>
+                        <td>{{ month_data.total_adj }}</td>
+                        <td class="grand-total">{{ month_data.total_cash|add:month_data.total_bank1|add:month_data.total_bank2|add:month_data.total_adj }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endfor %}
+    </div>
+
+    <!-- Payments Tables -->
+    <h1>Payments Table</h1>
+    <div class="table-container">
+        {% for month_data in payments_by_month %}
+            <h2>{{ month_data.month|date:"F Y" }}</h2>
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Loan Type</th>
+                        <th>Amount</th>
+                        <th>Cash</th>
+                        <th>Online</th>
+                        <th>Bank 1</th>
+                        <th>Bank 2</th>
+                        <th>Adjustment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                        {% if payment.created_at|date:"F Y" == month_data.month|date:"F Y" %}
+                            <tr>
+                                <td>{{ payment.code  }}</td>
+                                <td>{{ payment.amount }}</td>
+                                <td>{{ payment.cash }}</td>
+                                <td>{{ payment.online }}</td>
+                                <td>{{ payment.bank1 }}</td>
+                                <td>{{ payment.bank2 }}</td>
+                                <td>{{ payment.adj }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>{{ month_data.month|date:"F" }} Total</th>
+                        <td>{{ month_data.total_amount }}</td>
+                        <td>{{ month_data.total_cash }}</td>
+                        <td>{{ month_data.total_online }}</td>
+                        <td>{{ month_data.total_bank1 }}</td>
+                        <td>{{ month_data.total_bank2 }}</td>
+                        <td>{{ month_data.total_adj }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Internal CSS -->
+<!-- Internal CSS -->
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: auto;
+    }
+
+    .ledger-book-content {
+        margin: 20px;
+    }
+
+    .filter-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .filter-group {
+        margin-right: 15px;
+    }
+
+    .filter-container label {
+        margin-right: 5px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .filter-container select {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+        vertical-align: middle; /* Aligns with the label */
+    }
+
+    .filter-container button {
+        padding: 8px 16px;
+        background-color:#cc0000;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px; /* Ensure font size matches dropdowns */
+        vertical-align: middle; /* Aligns with the dropdowns */
+    }
+
+    .filter-container button:hover {
+        background-color: #0056b3;
+    }
+
+    .table-container {
+        min-height: 300px;
+        overflow-x: auto;
+    }
+
+    .styled-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+
+    .styled-table thead {
+        background-color: #f4f4f4;
+    }
+
+    .styled-table th, .styled-table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .styled-table tfoot {
+        background-color: #f4f4f4;
+        font-weight: bold;
+    }
+
+    .styled-table tfoot th, .styled-table tfoot td {
+        text-align: right;
+    }
+
+    .grand-total {
+        color: red;
+        font-weight: bold;
+    }
+
+    .table-container h2 {
+        margin-top: 20px;
+        font-size: 1.5em;
+        color: #333;
+    }
+</style>
+{% endblock %}

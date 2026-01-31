@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="fixed-header"> {# New div to keep back button fixed during scroll #}
+        <h2>
+            <a href="javascript:history.back()" style="color: red; text-decoration: none;">← Back</a>
+        </h2>
+    </div>
+
+    <div class="page-container"> {# This div will now handle the main scroll #}
+        {% for loan_info in loan_data %}
+            <div class="table-section-container"> {# This wraps each loan's details and table #}
+                <div class="loan-details">
+                    <h3 style="color: rgb(0, 0, 0);">Loan No: {{ loan_info.loan.code }} ({{ loan_info.loan.created_at|date:"d-m-Y" }})</h3>
+                    <h4 >{{ loan_info.loan.type_of_loan }}</h4>
+                    <h4 style="color: red;">Loan Amount: {{ loan_info.loan.amount }}</h4>
+                </div>
+
+                {% if loan_info.transactions %}
+                    
+                    <div class="table-wrapper"> {# Removed individual scroll properties from here #}
+                        <table class="styled-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">Month</th>
+                                    <th colspan="2">Opening Balance</th>
+                                    <th colspan="2">Payment Received</th>
+                                    <th colspan="2">Balance</th>
+                                    <th rowspan="2">Action</th>
+                                </tr>
+                                <tr>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for txn in loan_info.transactions %}
+                                    <tr>
+                                        <td>{{ txn.month|date:"F Y" }}</td>
+                                        <td>{{ txn.opening_balance }}</td>
+                                        <td>{{ txn.opening_interest }}</td>
+                                        <td>{{ txn.paid_principal }}</td>
+                                        <td>{{ txn.paid_interest }}</td>
+                                        <td>{{ txn.remaining_principal }}</td>
+                                        <td>{{ txn.remaining_interest }}</td>
+                                        <td>
+                                            <a href="{% url 'loan_transactions_detail' loan_info.loan.id txn.month|date:'Y-m' %}" class="btn-view">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div> {# End table-wrapper #}
+                {% endif %}
+            </div> {# End table-section-container #}
+        {% endfor %}
+    </div> {# End page-container #}
+
+    <style>
+        /* General Body Styling - Keep minimal here, mostly in base.html */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5; /* Light grey background for the overall page */
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Styles for the fixed header (Back button) */
+        
+
+        /* Styles for the main scrollable page container */
+        .page-container {
+            /* Aggressively large width for the container */
+            max-width: 2500px; /* **Significantly Increased Width** */
+            margin: 0 auto 40px; /* Centered, top margin handled by fixed-header, bottom margin */
+            padding: 30px; /* Padding for the content area */
+            background-color: #ffffff; /* White background for the main content area */
+            border-radius: 12px; /* Softly rounded corners */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08); /* Modern, soft shadow */
+
+            /* Overall Scroll Properties */
+            max-height: calc(100vh - 40px); /* **Further Increased Max Height** (more room for content) */
+            overflow-y: auto; /* Enable vertical scrollbar when content exceeds max-height */
+            overflow-x: hidden; /* Prevent horizontal scroll for the whole page */
+            padding-right: 25px; /* Slightly increased padding-right for scrollbar clearance */
+        }
+
+        /* Back Button Styling */
+        h2 a {
+            color: #e74c3c; /* Alizarin Red for emphasis */
+            text-decoration: none;
+            font-size: 1.6rem;
+            font-weight: 600;
+            transition: color 0.3s ease, transform 0.3s ease;
+            display: inline-block; /* Allows transform */
+        }
+
+        h2 a:hover {
+            color: #c0392b; /* Darker red on hover */
+            transform: translateX(-5px); /* Subtle slide effect */
+        }
+
+        /* Loan Info Section Styling - No changes here */
+        .table-section-container {
+            background-color: #fdfdfd; /* Slightly off-white for individual loan sections */
+            border: 1px solid #e0e6ed; /* Subtle border */
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 40px; /* More space between loan tables */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Lighter shadow for sections */
+        }
+
+        .loan-details { /* Flex container for loan details */
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            justify-content: space-between;
+            align-items: baseline; /* Align text baselines */
+            gap: 25px; /* More space between items */
+            margin-bottom: 25px;
+            padding-bottom: 15px; /* Space above the table itself */
+            border-bottom: 1px solid #eee; /* Separator for loan details */
+        }
+
+        .table-section-container h3 {
+            font-size: 1.8rem; /* Larger and more prominent */
+            color: #2c3e50; /* Darker text */
+            margin: 0; /* Remove default margins */
+            flex-basis: 100%; /* Take full width on top for H3 */
+        }
+
+        .table-section-container h4 {
+            font-size: 1.1rem; /* Slightly smaller for details */
+            color: #555;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Table Wrapper - now only for horizontal overflow, no vertical scroll */
+        .table-wrapper {
+            overflow-x: auto; /* Enable horizontal scrollbar if table content is too wide */
+            border: 1px solid #e0e6ed; /* Border for the scrollable area */
+            border-radius: 8px; /* Slightly rounded corners for the scroll area */
+            margin-top: 20px; /* Space above the table */
+        }
+
+        /* Table Styling */
+        .styled-table {
+            width: 100%; /* Ensure table takes full width of its wrapper */
+            border-collapse: collapse;
+            font-size: 0.95em; /* Slightly smaller font for table data */
+            text-align: left;
+            min-width: 900px; /* Set a minimum width for the table to prevent excessive squishing */
+        }
+
+        .styled-table thead tr {
+            background-color: #34495e; /* Dark header background */
+            color: #ffffff;
+            text-align: left;
+        }
+
+        /* Sticky header - now sticky within the table-wrapper, not the page container */
+        .styled-table th {
+            position: sticky;
+            top: 0; /* Stick to the top of the .table-wrapper (which is horizontally scrollable) */
+            background-color: #34495e; /* Ensure background is solid when sticky */
+            z-index: 10; /* Make sure header is above scrolling content */
+            padding: 15px 20px; /* Increased padding */
+            border-bottom: 1px solid #ecf0f1;
+            font-weight: 600; /* Bolder headers */
+            text-transform: uppercase; /* Uppercase for headers */
+            letter-spacing: 0.5px; /* Slight letter spacing */
+        }
+
+        .styled-table td {
+            padding: 15px 20px; /* Increased padding */
+            border-bottom: 1px solid #ecf0f1; /* Light border for rows */
+        }
+
+        .styled-table th[rowspan="2"] {
+            vertical-align: middle; /* Center multi-row headers */
+        }
+
+        .styled-table tbody tr {
+            background-color: #ffffff; /* White rows */
+            transition: background-color 0.2s ease;
+        }
+
+        .styled-table tbody tr:nth-of-type(even) {
+            background-color: #f8fbfd; /* Subtle stripe for readability */
+        }
+
+        .styled-table tbody tr:hover {
+            background-color: #e9f5ff; /* Light blue on hover for rows */
+            transform: translateY(-2px); /* Slight lift on hover */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Subtle shadow on hover */
+            transition: all 0.2s ease-out; /* Smooth transition for hover effects */
+        }
+
+        /* Specific styling for financial columns */
+        .styled-table td:nth-child(even),
+        .styled-table td:nth-child(odd) {
+            font-family: 'Roboto Mono', monospace; /* Monospace for numbers */
+            font-size: 0.98em;
+            color: #444;
+        }
+
+        /* Action Button in Table */
+        .btn-view {
+            padding: 8px 16px; /* Larger button */
+            background-color: #3498db; /* Peter River Blue */
+            color: white;
+            text-decoration: none;
+            border-radius: 6px; /* More rounded */
+            font-weight: 500;
+            font-size: 0.9em;
+            display: inline-block;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-view:hover {
+            background-color: #2980b9; /* Darker blue on hover */
+            transform: translateY(-1px); /* Slight lift */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow */
+        }
+
+        /* Responsive adjustments (updated) */
+        @media (max-width: 2600px) { /* New breakpoint for extra-large screens */
+            .page-container, .fixed-header {
+                max-width: 2200px;
+            }
+        }
+        @media (max-width: 2300px) {
+            .page-container, .fixed-header {
+                max-width: 1900px;
+            }
+        }
+        @media (max-width: 1950px) { /* Adjusted from 1900px */
+            .page-container, .fixed-header {
+                max-width: 1600px;
+            }
+        }
+        @media (max-width: 1700px) {
+            .page-container, .fixed-header {
+                max-width: 1400px;
+            }
+        }
+        @media (max-width: 1440px) {
+            .page-container, .fixed-header {
+                max-width: 1200px;
+            }
+        }
+        @media (max-width: 1200px) {
+            .page-container, .fixed-header {
+                max-width: 95%;
+            }
+        }
+        @media (max-width: 992px) {
+            .page-container, .fixed-header {
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .fixed-header {
+                padding-top: 20px;
+            }
+            .table-section-container h3 {
+                font-size: 1.5rem;
+            }
+            .table-section-container h4 {
+                font-size: 1rem;
+                flex-basis: auto;
+            }
+            .styled-table th,
+            .styled-table td {
+                padding: 10px 12px;
+            }
+            .styled-table {
+                min-width: 700px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-container, .fixed-header {
+                padding: 15px;
+            }
+            .loan-details {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .styled-table {
+                font-size: 0.85em;
+                min-width: 500px;
+            }
+            .styled-table th,
+            .styled-table td {
+                padding: 8px 10px;
+            }
+            /* Hide some columns on smaller screens to prevent excessive horizontal scroll */
+            .styled-table th:nth-child(3), .styled-table td:nth-child(3), /* Opening Interest */
+            .styled-table th:nth-child(4), .styled-table td:nth-child(4), /* Paid Principal */
+            .styled-table th:nth-child(5), .styled-table td:nth-child(5) { /* Paid Interest */
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h2 a {
+                font-size: 1.3rem;
+            }
+            .table-section-container h3 {
+                font-size: 1.3rem;
+            }
+            .table-section-container h4 {
+                font-size: 0.9rem;
+            }
+            .styled-table {
+                font-size: 0.8em;
+                min-width: 380px;
+            }
+            .styled-table th,
+            .styled-table td {
+                padding: 6px 8px;
+            }
+            /* Further hiding on very small screens if necessary */
+            .styled-table th:nth-child(7), .styled-table td:nth-child(7) { /* Remaining Interest */
+                display: none;
+            }
+            .styled-table th:nth-child(2), .styled-table td:nth-child(2), /* Opening Principal */
+            .styled-table th:nth-child(6), .styled-table td:nth-child(6) { /* Remaining Principal */
+                display: none;
+            }
+        }
+    </style>
+{% endblock content %}

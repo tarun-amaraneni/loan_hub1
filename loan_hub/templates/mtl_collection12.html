@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTL Collection</title>
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=1.2"> <!-- Incremented the version number -->
+    <style>
+        
+    </style>
+</head>
+<body>
+    {% block content %}
+    
+    <div class="mtl-collection-content">
+        <h2>
+                <a href="javascript:history.back()" style="color: red; text-decoration: none;">← Back</a>
+              </h2>
+        {% for loan_info in loan_data %}
+        <div class="table-container" style="margin-bottom: 40px;"> <!-- Added margin-bottom to create space between tables -->
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                <h3>Loan No: {{ loan_info.loan.code }}({{ loan_info.loan.created_at|date:"d-m-Y" }})</h3>
+                <h4>{{ loan_info.loan.type_of_loan }}</h4>
+                <h4>Loan Amount: {{ loan_info.loan.amount }}</h4>
+                
+
+            </div>
+            {% if loan_info.transactions %}
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Gen.No</th>
+                            <th>Loan No.</th>
+                            <th>Name of the Holder</th>
+                            <th>Opening Balance</th>
+                            <th>Collected during the Month</th>
+                            <th>Balance Amount - Rs.</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in loan_info.transactions %}
+                        <tr >
+                            <td>{{ item.month|date:"M-Y" }}</td>
+                            <td>{{ loan_info.gen_no }}</td>
+                            <td>{{ loan_info.loan.code }}</td>
+                            <td>{{ user_name }}</td>
+                            <td>{{ item.opening_balance }}</td>
+                            <td>{{ item.total_collected }}</td>
+                            <td>{{ item.closing_balance }}</td>
+                            <td>
+                                {% if item.month %}
+    <a href="{% url 'loan_transactions_detail' loan_info.loan.id item.month|date:'Y-m' %}">
+        <button class="save-btn" style="background-color: #4CAF50; border: none; color: white; padding: 6px 10px; text-align: center; text-decoration: none; display: inline-block; font-size: 12px; margin: 4px 2px; cursor: pointer; border-radius: 4px;">
+            View Transactions
+        </button>
+    </a>
+    {% else %}
+    No Transactions
+    {% endif %}
+</td>
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No transactions done for this loan.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endblock %}
+</body>
+</html>

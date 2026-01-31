@@ -1,0 +1,227 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* General body styling */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    background-color: #f4f4f4;
+}
+
+/* Sidebar styling */
+.sidebar {
+    width: 250px;
+    background-color: #000;
+    color: white;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    background-color: #ff0000;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.sidebar-menu li {
+    padding: 15px 20px;
+}
+
+.sidebar-menu li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+}
+
+.sidebar-menu li a:hover {
+    background-color: #ff0000;
+}
+
+/* Main content styling */
+.main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.header {
+    background-color: #000;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header .logo {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ff0000;
+}
+
+.header .app-name {
+    font-size: 18px;
+    text-align: center;
+    flex-grow: 1;
+    color: #ff0000;
+}
+
+.header .profile {
+    display: flex;
+    align-items: center;
+}
+
+.header .profile img {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.header .profile span {
+    font-size: 16px;
+}
+.form1{
+    display:flex;
+    flex-direction: row;
+    gap:10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+.form2{
+    display:flex;
+    flex-direction: row;
+    gap:10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+.form3{
+    display:flex;
+    flex-direction: row;
+    gap:10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+.form4{
+    display:flex;
+    flex-direction: row;
+    gap:10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+.form5{
+    display:flex;
+    flex-direction: row;
+    gap:10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+.content {
+    padding: 20px;
+    background-color: #f4f4f4;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* Form styling */
+.center-form {
+    /* display: flex; */
+    flex-direction: column;
+    align-items: center;
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    max-width: 600px;
+    margin: auto;
+    margin-top: 40px;
+}
+
+.input-box, .dropdown {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+
+}
+.content h2{
+    text-align: center;
+}
+
+.submit-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ff0000;
+    color: white;
+    cursor: pointer;
+    margin-top: 10px;
+    justify-content: center;
+    margin-left: 42%;
+}
+
+.submit-button:hover {
+    background-color: #cc0000;
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .header .app-name {
+        display: none;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header .profile {
+        margin-top: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 10px;
+    }
+
+    .header .profile img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .header .profile span {
+        font-size: 14px;
+    }
+}

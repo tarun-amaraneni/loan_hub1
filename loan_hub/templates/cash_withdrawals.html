@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div style="padding:30px; font-family: Arial, sans-serif; background:#f5f5f5;">
+    <h3 style="margin-bottom:25px; font-weight:600; color:#333;">
+        Cash Overview
+    </h3>
+
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+
+        <!-- Cash -->
+        <div style="
+            border:1px solid #e0e0e0;
+            padding:20px;
+            width:220px;
+            border-radius:12px;
+            box-shadow:0 6px 12px rgba(0,0,0,0.08);
+            background:#fff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.15)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.08)';">
+            <h5 style="margin:0; color:#555; font-weight:500;">Cash</h5>
+            <h3 style="margin-top:12px; color:#2e7d32;">
+                ₹ {{ withdrawals.cash }}
+            </h3>
+        </div>
+
+        <!-- Bank 1 -->
+        <div style="
+            border:1px solid #e0e0e0;
+            padding:20px;
+            width:220px;
+            border-radius:12px;
+            box-shadow:0 6px 12px rgba(0,0,0,0.08);
+            background:#fff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.15)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.08)';">
+            <h5 style="margin:0; color:#555; font-weight:500;">Bank 1</h5>
+            <h3 style="margin-top:12px; color:#1565c0;">
+                ₹ {{ withdrawals.bank1 }}
+            </h3>
+        </div>
+
+        <!-- Bank 2 -->
+        <div style="
+            border:1px solid #e0e0e0;
+            padding:20px;
+            width:220px;
+            border-radius:12px;
+            box-shadow:0 6px 12px rgba(0,0,0,0.08);
+            background:#fff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.15)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.08)';">
+            <h5 style="margin:0; color:#555; font-weight:500;">Bank 2</h5>
+            <h3 style="margin-top:12px; color:#0277bd;">
+                ₹ {{ withdrawals.bank2 }}
+            </h3>
+        </div>
+
+        <!-- Adjustment -->
+        <div style="
+            border:1px solid #e0e0e0;
+            padding:20px;
+            width:220px;
+            border-radius:12px;
+            box-shadow:0 6px 12px rgba(0,0,0,0.08);
+            background:#fff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.15)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.08)';">
+            <h5 style="margin:0; color:#555; font-weight:500;">Adjustment</h5>
+            <h3 style="margin-top:12px; color:#f9a825;">
+                ₹ {{ withdrawals.adj }}
+            </h3>
+        </div>
+
+    </div>
+</div>
+
+<hr style="margin:45px 0; border:0; border-top:1px solid #ccc;">
+
+<h4 style="margin-bottom:20px; color:#333;">Transfer Amount</h4>
+
+<form method="post" action="{% url 'cash_transfer' %}">
+    {% csrf_token %}
+
+    <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:end;">
+
+        <!-- FROM -->
+        <div>
+            <label style="font-weight:500;">From</label><br>
+            <select name="from_account" id="from_account"
+                    style="padding:8px 12px; width:180px; border-radius:5px; border:1px solid #ccc;"
+                    onchange="updateToDropdown()"
+                    required>
+                <option value="">-- Select --</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank1">Bank 1</option>
+                <option value="Bank2">Bank 2</option>
+                <option value="Adjustment">Adjustment</option>
+            </select>
+        </div>
+
+        <!-- TO -->
+        <div>
+            <label style="font-weight:500;">To</label><br>
+            <select name="to_account" id="to_account"
+                    style="padding:8px 12px; width:180px; border-radius:5px; border:1px solid #ccc;"
+                    required>
+                <option value="">-- Select --</option>
+            </select>
+        </div>
+
+        <!-- AMOUNT -->
+        <div>
+            <label style="font-weight:500;">Amount</label><br>
+            <input type="number" name="amount"
+                   step="0.01"
+                   style="padding:8px 12px; width:180px; border-radius:5px; border:1px solid #ccc;"
+                   required>
+        </div>
+
+        <!-- BUTTON -->
+        <div>
+            <button type="submit"
+                    style="
+                        padding:10px 25px;
+                        background:#2e7d32;
+                        color:#fff;
+                        border:none;
+                        border-radius:6px;
+                        cursor:pointer;
+                        font-weight:600;
+                        transition: background 0.2s;
+                    "
+                    onmouseover="this.style.background='#1b5e20';"
+                    onmouseout="this.style.background='#2e7d32';">
+                Transfer
+            </button>
+        </div>
+
+    </div>
+</form>
+
+<script>
+function updateToDropdown() {
+    const from = document.getElementById("from_account").value;
+    const to = document.getElementById("to_account");
+
+    const options = ["Cash", "Bank1", "Bank2", "Adjustment"];
+    to.innerHTML = '<option value="">-- Select --</option>';
+
+    options.forEach(opt => {
+        if (opt !== from) {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.text = opt.replace("Bank", "Bank ");
+            to.appendChild(option);
+        }
+    });
+}
+</script>
+
+{% endblock %}

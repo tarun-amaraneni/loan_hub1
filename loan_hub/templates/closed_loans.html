@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+/* ===== PAGE ===== */
+body {
+    background: #f0f2f5;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #2c3e50;
+    margin: 0;
+    padding: 0;
+}
+
+.page-card {
+    max-width: 950px;
+    margin: 50px auto;
+    padding: 30px 35px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+/* ===== HEADER ===== */
+h2 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 30px;
+    color: #1f3a93;
+}
+
+/* ===== SEARCH FIELD ===== */
+.suggestion-box {
+    position: relative;
+    width: 320px;
+    margin: 0 auto 25px auto;
+}
+
+.input-box1 {
+    width: 100%;
+    padding: 12px 40px 12px 16px;
+    border: 1px solid #c0c7d6;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.25s;
+}
+
+.input-box1:focus {
+    border-color: #1f78c5;
+    box-shadow: 0 0 8px rgba(31,120,197,0.2);
+}
+
+/* arrow */
+.arrow {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    cursor: pointer;
+    color: #555;
+    transition: transform 0.3s;
+}
+.arrow.rotate { transform: translateY(-50%) rotate(180deg); }
+
+/* dropdown */
+#code_suggestions {
+    position: absolute;
+    top: 105%;
+    left: 0;
+    width: 100%;
+    border: 1px solid #c0c7d6;
+    border-radius: 8px;
+    background: #fff;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 9999;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+#code_suggestions div {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+#code_suggestions div.highlighted,
+#code_suggestions div:hover { background: #e3f0ff; }
+
+/* search button */
+.submit-button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    margin-top: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #1f78c5;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.2s;
+}
+
+.submit-button:hover {
+    background: #155a9c;
+    transform: translateY(-2px);
+}
+
+/* ===== TABLE ===== */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 25px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s forwards;
+}
+
+.styled-table thead {
+    background: #1f78c5;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.styled-table th,
+.styled-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e6e6e6;
+    text-align: center;
+}
+
+.styled-table tbody tr:nth-child(even) { background: #f9fbff; }
+.styled-table tbody tr:hover { background: #e3f0ff; transition: background 0.25s; }
+
+/* view button */
+.view-btnS {
+    background: #28a745;
+    color: #fff;
+    padding: 6px 16px;
+    font-size: 13px;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background 0.25s, transform 0.2s;
+}
+
+.view-btnS:hover {
+    background: #1b7c33;
+    transform: translateY(-1px);
+}
+
+/* fade-in animation */
+@keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* responsive adjustments */
+@media (max-width: 768px) {
+    .page-card { padding: 20px 25px; }
+    .input-box1 { font-size: 14px; }
+    h2 { font-size: 24px; }
+    .styled-table th, .styled-table td { font-size: 13px; padding: 10px 8px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-card">
+<h2>Closed Loans {% if user_name %}for <b>{{ user_name }}</b>{% endif %}</h2>
+
+<form method="post" action="{% url 'closed_loans' %}">
+    {% csrf_token %}
+    <div class="suggestion-box">
+        <input type="text" id="gen_no_input" name="gen_no" placeholder="Enter Gen.NO" class="input-box1" autocomplete="off" value="{{ gen_no|default:'' }}">
+        <span id="dropdown_arrow" class="arrow">▼</span>
+        <div id="code_suggestions"></div>
+    </div>
+    <button type="submit" class="submit-button">Search</button>
+</form>
+
+<table class="styled-table">
+    <thead>
+        <tr>
+            <th>Loan Type</th>
+            <th>Ref Code</th>
+            <th>Amount</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for loan in closed_loans %}
+        <tr>
+            <td>{{ loan.type_of_loan }}</td>
+            <td>{{ loan.code }}</td>
+            <td>{{ loan.amount }}</td>
+            <td><a class="view-btnS" href="{% url 'mtl_collection' loan.id %}">View</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No Closed Loans Found</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<script>
+// JS remains exactly the same (autocomplete + arrow)
+document.addEventListener("DOMContentLoaded", ()=>{
+    const input = document.getElementById("gen_no_input");
+    const dropdown = document.getElementById("code_suggestions");
+    const arrow = document.getElementById("dropdown_arrow");
+    let users = [];
+    let visible = false;
+    let selectedIndex = -1;
+
+    async function loadUsers() {
+        if(users.length === 0){
+            const res = await fetch("/all-users/");
+            users = await res.json();
+        }
+    }
+
+    function showDropdown(filtered) {
+        dropdown.innerHTML = "";
+        selectedIndex = -1;
+
+        if(filtered.length === 0){
+            const div = document.createElement("div");
+            div.textContent = "No results";
+            div.style.color = "#888";
+            div.style.padding = "8px";
+            dropdown.appendChild(div);
+        } else {
+            filtered.forEach(u=>{
+                const div = document.createElement("div");
+                div.textContent = `${u.code} - ${u.name}`;
+                div.onclick = ()=>{ input.value = u.code; hideDropdown(); };
+                dropdown.appendChild(div);
+            });
+        }
+        dropdown.style.display = "block";
+        arrow.classList.add("rotate");
+        visible = true;
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = "none";
+        arrow.classList.remove("rotate");
+        visible = false;
+        selectedIndex = -1;
+    }
+
+    function filter(value){
+        const q = value.toLowerCase();
+        const filtered = users.filter(u=> u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q));
+        showDropdown(filtered);
+    }
+
+    function highlightSelected(){
+        const items = Array.from(dropdown.querySelectorAll("div")).filter(d=>!d.textContent.includes("No results"));
+        items.forEach((el,i)=> el.classList.toggle("highlighted", i===selectedIndex));
+        if(items[selectedIndex]) items[selectedIndex].scrollIntoView({ block: "nearest" });
+    }
+
+    input.addEventListener("focus", async ()=>{
+        await loadUsers();
+        filter(input.value.trim());
+    });
+
+    input.addEventListener("keydown", e=>{
+        const items = Array.from(dropdown.querySelectorAll("div")).filter(d=>!d.textContent.includes("No results"));
+        if(items.length===0) return;
+
+        if(e.key === "ArrowDown"){
+            selectedIndex = (selectedIndex + 1) % items.length;
+            highlightSelected();
+            e.preventDefault();
+        } else if(e.key === "ArrowUp"){
+            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+            highlightSelected();
+            e.preventDefault();
+        } else if(e.key === "Enter"){
+            if(selectedIndex>=0 && items[selectedIndex]){
+                input.value = items[selectedIndex].textContent.split(" - ")[0];
+                hideDropdown();
+            }
+            e.preventDefault();
+        }
+    });
+
+    input.addEventListener("input", ()=>{
+        selectedIndex = -1;
+        filter(input.value.trim());
+    });
+
+    arrow.onclick = ()=> visible ? hideDropdown() : filter(input.value.trim());
+
+    document.addEventListener("click", e=>{
+        if(e.target!==input && e.target!==arrow && !dropdown.contains(e.target)) hideDropdown();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,530 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    /* Old .error-message is now redundant, consider removing if not used elsewhere */
+    .error-message {
+        color: red;
+        display: none;
+    }
+
+    /* Action Buttons (Save, View) - Slightly refined */
+    .save-btn, .view-btn {
+        background-color: #28a745; /* Green for Save */
+        border: none;
+        color: white;
+        padding: 8px 15px; /* Slightly larger padding */
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 13px; /* Slightly larger font */
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px; /* Softer rounded corners */
+        margin-left: 7%;
+        transition: background-color 0.2s ease, transform 0.2s ease; /* Smooth transitions */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+    }
+    .view-btn {
+        background-color: #007bff; /* Blue for View */
+    }
+    .save-btn:hover {
+        background-color: #218838; /* Darker green on hover */
+        transform: translateY(-1px); /* Slight lift */
+    }
+    .view-btn:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+        transform: translateY(-1px);
+    }
+    .submit-button:hover {
+        background-color: green;
+        color: rgb(255, 255, 255);
+    }
+    .editable {
+        border: none;
+        background: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        font-size: 14px;
+        margin: 0;
+        padding: 8px 10px;
+        display: inline-block;
+    }
+    .editable:focus {
+        outline: none;
+        border: 2px solid #4CAF50;
+    }
+
+    /* --- GOD LEVEL ALERTS --- */
+    .alert {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 25px 35px; /* More generous padding */
+        border-radius: 12px; /* More rounded corners */
+        color: #fff;
+        z-index: 1000;
+        font-size: 1.1rem; /* Slightly larger text */
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); /* Deeper shadow */
+        opacity: 0; /* Start hidden for animation */
+        visibility: hidden; /* Hide from screen readers initially */
+        transition: opacity 0.4s ease-out, transform 0.4s ease-out, visibility 0.4s ease-out; /* Smooth transitions */
+        display: flex; /* Enable flexbox for icon and text alignment */
+        align-items: center; /* Vertically center icon and text */
+        justify-content: center; /* Horizontally center content */
+        gap: 15px; /* Space between icon and text */
+        min-width: 300px; /* Ensure a decent minimum width */
+    }
+
+    /* Alert States */
+    .alert-success {
+        background-color: #28a745; /* A standard, pleasant green */
+        border: 1px solid #218838;
+    }
+    .alert-danger {
+        background-color: #dc3545; /* A vibrant red */
+        border: 1px solid #c82333;
+    }
+    .alert-warning {
+        background-color: #ffc107; /* A clear, bold yellow/orange */
+        color: #343a40; /* Dark text for contrast on yellow */
+        border: 1px solid #e0a800;
+    }
+
+    /* Icon Styling for Alerts */
+    .alert .icon {
+        font-size: 1.8rem; /* Larger icon size */
+        line-height: 1; /* Ensure icon doesn't add extra line height */
+        margin-right: -5px; /* Adjust if gap property is too much */
+    }
+
+    /* Animation when active/visible */
+    .alert.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%) scale(1); /* Return to normal scale */
+    }
+
+    /* Keyframes for a more dynamic entry/exit (optional, but nice) */
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    @keyframes fadeOutScale {
+        from {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+    }
+
+    /* Apply animations when the `show` class is added/removed by JS */
+    .alert.show {
+        animation: fadeInScale 0.4s ease-out forwards;
+    }
+    .alert.hide-animation { /* A class to trigger the hide animation before removal */
+        animation: fadeOutScale 0.4s ease-in forwards;
+    }
+
+
+    /* Autocomplete Suggestions - Minor refinements */
+    #code_suggestions {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px; /* Slightly more rounded */
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+        position: absolute;
+        z-index: 1000;
+        margin-top: 5px;
+        width: 220px; /* Slightly wider */
+        max-height: 180px; /* Taller */
+        overflow-y: auto;
+    }
+
+    #code_suggestions option {
+        padding: 10px 12px; /* More padding */
+        background-color: #fff;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease;
+        font-size: 0.95rem; /* Slightly larger font */
+    }
+
+    #code_suggestions option:hover {
+        background-color: #e9f0f7; /* Light blueish hover */
+        color: #333;
+    }
+
+    #code_suggestions option:last-child {
+        border-bottom: none;
+    }
+</style>
+
+
+<div class="content">
+    
+    <form class="center-form1" method="post" action="{% url 'loans' %}">
+        {% csrf_token %}
+        <div>
+            <input type="text" id="gen_no_input" name="gen_no" placeholder="Gen.No." class="input-box1" autocomplete="off">
+            
+            <select id="code_suggestions" class="input-box1" size="5" style="display:none; position:absolute; width:200px;"></select>
+
+            <button type="submit" class="submit-button" disabled>Submit</button>
+        </div>
+        <input type="text" name="name" placeholder="Gen_No" class="input-box1" value="{{ gen_no }}" readonly>
+        <input type="text" name="name" placeholder="Name" class="input-box1" value="{{ user_name }}" readonly>
+    </form>
+    <br><br>
+    <h3 >RECEIPTS💰</h3>
+    <br>
+    <div class="table-container1">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th >Type of Receipt</th>
+                    <th >Ref</th>
+                    <th >Balance</th>
+                    <th >Interest</th>
+                    <th style="color: yellow;" >Cash</th>
+                    <th style="color: yellow;" >Bank1</th>
+                    <th style="color: yellow;" >Bank2</th>
+                    <th style="color: yellow;">Adj</th>
+                    <th style="width:140px">Date</th>
+                     <th style="width:140px">Actions</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in loans %}
+                <tr style="background-color: #ffffff">
+                    <td>{{ item.loan_type }}</td>
+                    <td>{{ item.loan.code }}</td>
+                    <td>{% if item.balance != 0 %}{{ item.balance }}{% endif %}</td>
+                    <td>{% if item.interest != 0 %}{{ item.interest }}{% endif %}</td>
+                    {# FIX: Removed space after {% endif %} #}
+                    <td>{% if item.loan %}<input name="cash" class="editable" placeholder="Enter Amount" contenteditable="true">{% endif %}</td>
+                    <td>{% if item.loan %}<input class="editable" placeholder="Enter Amount" contenteditable="true" name="bank1">{% endif %}</td>
+                    <td>{% if item.loan %}<input class="editable" placeholder="Enter Amount" contenteditable="true" name="bank2">{% endif %}</td>
+                    <td>{% if item.loan %}<input class="editable" placeholder="Enter Amount" contenteditable="true" name="adj">{% endif %}</td>
+                    <td>
+                        <input type="date"
+                            class="editable receipt-date"
+                            value="{% now 'Y-m-d' %}">
+                    </td>
+
+                    <td>
+                        {% if item.loan %}
+                        <button type="button" class="save-btn" data-loan-id="{{ item.loan.id }}">Save</button>
+                        <button class="view-btn">
+                            <a href="{% url 'mtl_collection' item.loan.id %}" style="text-decoration: none; color: white;">View</a>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+<br><br>
+    <h3 >PAYMENTS💸</h3>
+    <br>
+    <div class="table-container2">
+        <form id="newTableForm" method="post" action="{% url 'submit_new_table' %}">
+            {% csrf_token %}
+            <input type="hidden" name="gen_no" value="{{ gen_no }}">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        
+                        <th style="color: yellow;" >Loan Type</th>
+                        <th style="color: yellow;" >Amount</th>
+                        <th style="color: yellow;" >Cash</th>
+                       
+                        <th style="color: yellow;" >Bank1</th>
+                        <th style="color: yellow;" >Bank2</th>
+                        <th style="color: yellow;" >Adj</th>
+                        
+                        
+                        <th style="color: yellow;">Date</th>
+
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+<tbody>
+<tr>
+    <td>
+        <select name="Loan Type" class="editable">
+            <option value="">Select Loan Type</option>
+            <option value="MTL LOAN">MTL LOAN</option>
+            <option value="FDL LOAN">FDL LOAN</option>
+            <option value="KVP/NSC LOAN">KVP/NSC LOAN</option>
+        </select>
+    </td>
+
+    <td><input type="text" class="editable" name="Amount" placeholder="Amount"></td>
+    <td><input type="text" class="editable" name="Cash" placeholder="Cash"></td>
+    <td><input type="text" class="editable" name="Bank1" placeholder="Bank1"></td>
+    <td><input type="text" class="editable" name="Bank2" placeholder="Bank2"></td>
+    <td><input type="text" class="editable" name="Adj" placeholder="Adj"></td>
+
+    <td>
+        <input type="date"
+               class="editable"
+               name="date"
+               id="paymentDate">
+    </td>
+
+    <td>
+        <button type="submit" class="submit-btn">Submit</button>
+    </td>
+</tr>
+</tbody>
+
+            </table>
+        </form>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+// Returns today's date in YYYY-MM-DD format
+function getTodayDate() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${day}`;
+}
+
+$(document).ready(function() {
+    const $input = $('#gen_no_input');
+    const $dropdown = $('#code_suggestions');
+
+    // ====================== Autocomplete for Gen No / Name ======================
+    function fetchUsers(query = '') {
+        $.ajax({
+            url: '{% url "search_user_codes" %}',
+            data: { 'term': query },
+            dataType: 'json',
+            success: function(data) {
+                $dropdown.empty();
+                if (data.length) {
+                    data.forEach(user => {
+                        // Show both code and name in dropdown
+                        $dropdown.append('<option value="' + user.code + '">' + user.code + ' - [' + user.name + ']</option>');
+                    });
+                    $dropdown.show();
+                    $('button[type="submit"]').prop('disabled', false);
+                } else {
+                    $dropdown.hide();
+                    if(query.length > 0) showAlert('No user found matching your input.', 'warning');
+                    $('button[type="submit"]').prop('disabled', true);
+                }
+            },
+            error: function() {
+                $dropdown.hide();
+                showAlert('An error occurred while searching. Please try again.', 'danger');
+                $('button[type="submit"]').prop('disabled', true);
+            }
+        });
+    }
+
+    // Show all users when input is clicked
+    $input.on('focus', function() {
+        fetchUsers(''); // empty query returns all users
+    });
+
+    // Filter users while typing
+    $input.on('keyup', function() {
+        const query = $(this).val();
+        fetchUsers(query); // backend should filter by code OR name
+    });
+
+    // When an option is clicked
+    $dropdown.on('click', 'option', function() {
+        $input.val($(this).val());
+        $dropdown.hide();
+        $('button[type="submit"]').prop('disabled', false);
+    });
+
+    // Hide dropdown if clicked outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#gen_no_input, #code_suggestions').length) {
+            $dropdown.hide();
+        }
+    });
+
+    // ====================== Save Buttons for Receipts ======================
+    const saveButtons = document.querySelectorAll('.save-btn');
+
+    function clearInputFields(row) {
+        ['cash', 'bank1', 'bank2', 'adj'].forEach(name => {
+            const input = row.querySelector(`input[name="${name}"]`);
+            if (input) input.value = '';
+        });
+    }
+
+    function showLoadingIndicator() {
+        const loader = document.createElement('div');
+        loader.className = 'alert alert-warning';
+        loader.innerHTML = '<span class="icon">&#8987;</span><span>Please wait...</span>';
+        document.body.appendChild(loader);
+        requestAnimationFrame(() => loader.classList.add('show'));
+        return loader;
+    }
+
+    function hideLoadingIndicator(loader) {
+        loader.classList.add('hide-animation');
+        loader.addEventListener('animationend', function() { loader.remove(); }, { once: true });
+    }
+
+    saveButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const loanId = this.getAttribute('data-loan-id');
+
+            const cash = row.querySelector('input[name="cash"]').value || '0';
+            const bank1 = row.querySelector('input[name="bank1"]').value || '0';
+            const bank2 = row.querySelector('input[name="bank2"]').value || '0';
+            const adj = row.querySelector('input[name="adj"]').value || '0';
+
+            const dateInput = row.querySelector('input.receipt-date');
+            const date = dateInput && dateInput.value ? dateInput.value : getTodayDate();
+
+            if ([cash, bank1, bank2, adj].every(val => parseFloat(val) === 0)) {
+                showAlert('Please enter at least one amount in Cash, Bank1, Bank2, or Adj.', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('loan_id', loanId);
+            formData.append('cash', cash);
+            formData.append('bank1', bank1);
+            formData.append('bank2', bank2);
+            formData.append('adj', adj);
+            formData.append('date', date);
+
+            const loader = showLoadingIndicator();
+
+            fetch('{% url "loans" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                hideLoadingIndicator(loader);
+                if (data.status === 'success') {
+                    showAlert('Loan details updated successfully!', 'success');
+                    clearInputFields(row);
+                    setTimeout(() => window.location.reload(), 3000);
+                } else {
+                    showAlert('Error: ' + data.message, 'danger');
+                }
+            })
+            .catch(err => {
+                hideLoadingIndicator(loader);
+                showAlert('An error occurred while updating loan details.', 'danger');
+                console.error(err);
+            });
+        });
+    });
+
+    // ====================== New Table Form ======================
+    const newTableForm = document.getElementById('newTableForm');
+    if (newTableForm) {
+        newTableForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(newTableForm);
+            const loanType = formData.get('Loan Type');
+            const amount = parseFloat(formData.get('Amount')) || 0;
+            const cash = parseFloat(formData.get('Cash')) || 0;
+            const bank1 = parseFloat(formData.get('Bank1')) || 0;
+            const bank2 = parseFloat(formData.get('Bank2')) || 0;
+            const online = parseFloat(formData.get('Online')) || 0;
+            const adj = parseFloat(formData.get('Adj')) || 0;
+            const date = formData.get('date') || getTodayDate();
+
+            // Validation
+            if (!loanType) { showAlert("Please select a Loan Type.", "warning"); return; }
+            if (!amount) { showAlert("Please enter the Amount.", "warning"); return; }
+            if ([cash, bank1, bank2, online, adj].every(val => val === 0)) {
+                showAlert("Please enter at least one of Cash, Bank1, Bank2, Online, or Adj.", "warning");
+                return;
+            }
+
+            const totalEntered = cash + bank1 + bank2 + online + adj;
+            if (totalEntered !== amount) {
+                showAlert(`Amount ${amount} ≠ ${totalEntered}.`, 'warning');
+                return;
+            }
+
+            formData.set('date', date); // Ensure date is included
+
+            const loader = showLoadingIndicator();
+
+            fetch('{% url "submit_new_table" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                hideLoadingIndicator(loader);
+                if (data.status === 'success') {
+                    showAlert('Loan added successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showAlert('Error: ' + data.message, 'danger');
+                }
+            })
+            .catch(err => {
+                hideLoadingIndicator(loader);
+                showAlert('An error occurred while adding the Loan.', 'danger');
+                console.error(err);
+            });
+        });
+    }
+
+    // ====================== Set default date for paymentDate ======================
+    const paymentDate = document.getElementById('paymentDate');
+    if (paymentDate && !paymentDate.value) {
+        paymentDate.value = getTodayDate();
+    }
+});
+
+// ====================== showAlert function ======================
+function showAlert(message, type) {
+    var alertDiv = document.createElement('div');
+
+    let icon = '';
+    if (type === 'success') icon = '<span class="icon">&#10003;</span>';
+    else if (type === 'danger') icon = '<span class="icon">&#10060;</span>';
+    else if (type === 'warning') icon = '<span class="icon">&#9888;&#65039;</span>';
+
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.innerHTML = `${icon}<span>${message}</span>`;
+    document.body.appendChild(alertDiv);
+
+    requestAnimationFrame(() => alertDiv.classList.add('show'));
+
+    setTimeout(() => {
+        alertDiv.classList.add('hide-animation');
+        alertDiv.addEventListener('animationend', () => alertDiv.remove(), { once: true });
+    }, 3000);
+}
+</script>
+
+
+        
+{% endblock %}

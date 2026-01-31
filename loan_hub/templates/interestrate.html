@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Interest Rate{% endblock %}
+
+{% block content %}
+<style>
+    .content {
+        padding: 10px;
+    }
+
+    h2 {
+        margin-bottom: 18px;
+        color: #2c3e50;
+    }
+
+    /* TABLE */
+    .styled-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        font-size: 14px;
+    }
+
+    .styled-table thead {
+        background: #2c3e50;
+        color: #fff;
+    }
+
+    .styled-table th,
+    .styled-table td {
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid #e6e6e6;
+    }
+
+    /* 🦓 ZEBRA CROSSING */
+    .styled-table tbody tr:nth-child(even) {
+        background-color: #f6f9fc;
+    }
+
+    .styled-table tbody tr:nth-child(odd) {
+        background-color: #ffffff;
+    }
+
+    .styled-table tbody tr:hover {
+        background-color: #eaf2ff;
+        transition: background-color 0.2s ease;
+    }
+
+    /* ACTION BUTTON */
+    .update-btn {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .update-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    }
+
+    /* MODAL */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.45);
+    }
+
+    .modal-content1 {
+        background: #ffffff;
+        width: 420px;
+        margin: 8% auto;
+        padding: 25px;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        position: relative;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-content1 h2 {
+        margin-bottom: 18px;
+        text-align: center;
+        color: #2c3e50;
+    }
+
+    .modal-content1 label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #555;
+    }
+
+    .modal-content1 input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .modal-content1 input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
+    }
+
+    .model-button {
+        width: 100%;
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        color: #fff;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+
+    .model-button:hover {
+        opacity: 0.9;
+    }
+
+    .close {
+        position: absolute;
+        top: 14px;
+        right: 18px;
+        font-size: 22px;
+        cursor: pointer;
+        color: #888;
+    }
+
+    .close:hover {
+        color: #000;
+    }
+</style>
+
+<div class="content">
+    <h2>📈 Interest Rate</h2>
+
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th style="width: 250px;">Type of Receipt</th>
+                <th style="width: 250px;">Interest</th>
+                <th style="width: 125px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rate in interest_rates %}
+            <tr>
+                <td>{{ rate.Type_of_Receipt }}</td>
+                <td>{{ rate.interest }}</td>
+                <td>
+                    <button class="update-btn"
+                            data-type="{{ rate.Type_of_Receipt }}"
+                            data-interest="{{ rate.interest }}">
+                        ✏️ Update
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="myModal" class="modal">
+    <div class="modal-content1">
+        <span class="close">&times;</span>
+        <h2>Update Interest</h2>
+
+        <form method="post" action="{% url 'Update_intrest_rate' %}">
+            {% csrf_token %}
+            <label>Type of Receipt</label>
+            <input type="text" id="Type_of_Receipt" name="Type_of_Receipt" readonly required>
+
+            <label>Interest</label>
+            <input type="text" id="interest" name="interest" required>
+
+            <button type="submit" class="model-button">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById("myModal");
+    const updateBtns = document.querySelectorAll(".update-btn");
+    const closeBtn = document.querySelector(".close");
+    const typeInput = document.getElementById("Type_of_Receipt");
+    const interestInput = document.getElementById("interest");
+
+    updateBtns.forEach(btn => {
+        btn.onclick = () => {
+            typeInput.value = btn.dataset.type;
+            interestInput.value = btn.dataset.interest;
+            modal.style.display = "block";
+        };
+    });
+
+    closeBtn.onclick = () => modal.style.display = "none";
+
+    window.onclick = (e) => {
+        if (e.target === modal) modal.style.display = "none";
+    };
+</script>
+{% endblock %}

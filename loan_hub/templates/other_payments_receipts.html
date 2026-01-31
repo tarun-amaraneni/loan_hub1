@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; background:#f3f6fa; }
+
+.main-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 12px;
+}
+
+.top-controls { margin-bottom: 12px; }
+
+.search-bar, .date-download {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.date-download {
+    background: #e9eef5;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+}
+
+input[type=date], input[type=text] {
+    padding: 7px;
+    border-radius: 5px;
+    border: 1px solid #bfc7d3;
+}
+
+.table-scroll {
+    flex: 1;
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 1px solid #cfd4dc;
+    background: white;
+}
+
+.report-table {
+    width: max-content;
+    min-width: 1200px;
+    border-collapse: collapse;
+}
+
+.report-table thead th {
+    background: #34495e;
+    color: yellow;
+    padding: 10px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+}
+
+.report-table tbody td {
+    padding: 9px;
+    border-bottom: 1px solid #ececec;
+    text-align: center;
+}
+
+.report-table tr:hover { background:#f8fbff; }
+
+#clearFiltersBtn {
+    background: #e63946;
+    color:#fff;
+    padding: 7px 14px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+}
+
+#downloadBtn {
+    background: #34495e;
+    color: white;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.row-download-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #34495e;
+    background: #f0f0f0;
+    cursor: pointer;
+}
+</style>
+
+<div class="main-wrapper">
+
+    <h2 style="text-align:center; margin-bottom:14px;">
+        📋 {{ report_type }} List
+    </h2>
+
+    <div class="top-controls">
+
+        <div class="search-bar">
+            <input id="searchInput" type="text" placeholder="Search..." style="width:260px;">
+        </div>
+
+        <div class="date-download">
+            <div>
+                <label>From</label>
+                <input id="fromDate" type="date">
+            </div>
+            <div>
+                <label>To</label>
+                <input id="toDate" type="date">
+            </div>
+            <button id="clearFiltersBtn">Clear</button>
+            <button id="downloadBtn">⬇ Download Excel</button>
+        </div>
+
+    </div>
+
+    <div class="table-scroll" id="tableScroll">
+        <table id="reportTable" class="report-table">
+            <thead>
+                <tr>
+                    <th>Gen No</th>
+                    <th>Name</th>
+                    <th>Ref</th>
+                    <th>Cash</th>
+                    <th>Bank 1</th>
+                    <th>Bank 2</th>
+                    <th>Adjustment</th>
+                    <th>Created At</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.gen_no }}</td>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.ref }}</td>
+                    <td>{{ row.cash }}</td>
+                    <td>{{ row.bank1 }}</td>
+                    <td>{{ row.bank2 }}</td>
+                    <td>{{ row.adjustment }}</td>
+                    <td>{{ row.created_at }}</td>
+                    <td>
+                        <button class="row-download-btn">⬇</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+function applyFilters() {
+    const s = searchInput.value.toLowerCase();
+    const f = fromDate.value;
+    const t = toDate.value;
+
+    document.querySelectorAll("#reportTable tbody tr").forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const dateCell = row.children[7];
+        const d = dateCell ? new Date(dateCell.innerText) : null;
+
+        let ok = text.includes(s);
+        if (f && d && d < new Date(f)) ok = false;
+        if (t && d && d > new Date(t)) ok = false;
+
+        row.style.display = ok ? "" : "none";
+    });
+}
+
+searchInput.onkeyup = applyFilters;
+fromDate.onchange = applyFilters;
+toDate.onchange = applyFilters;
+
+clearFiltersBtn.onclick = () => {
+    searchInput.value = "";
+    fromDate.value = "";
+    toDate.value = "";
+    applyFilters();
+};
+
+downloadBtn.onclick = () => {
+    let csv = [];
+    document.querySelectorAll("#reportTable tr").forEach(r => {
+        if (r.style.display !== "none")
+            csv.push([...r.cells].slice(0, -1).map(c => c.innerText).join(","));
+    });
+    const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "{{ report_type }}.csv";
+    a.click();
+};
+
+document.querySelectorAll(".row-download-btn").forEach(btn => {
+    btn.onclick = () => {
+        const r = btn.closest("tr");
+        const csv = [...r.cells].slice(0, -1).map(c => c.innerText).join(",");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "{{ report_type }}_" + r.cells[0].innerText + ".csv";
+        a.click();
+    };
+});
+</script>
+
+{% endblock %}

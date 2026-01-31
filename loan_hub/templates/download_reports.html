@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+/* ====== PAGE LAYOUT ====== */
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", "Roboto", Arial, sans-serif;
+    min-height: 100%;
+    background-color: #f3f6fa;
+}
+
+.main-wrapper {
+    display: flex;
+    min-height: 100%;
+}
+
+.content {
+    flex: 1;
+    padding: 40px 30px;
+}
+
+/* ====== REPORT PAGE STYLES ====== */
+.report-title {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 35px;
+    text-align: center;
+    color: #333;
+}
+
+.row-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #555;
+}
+
+.card-row {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-bottom: 45px;
+    flex-wrap: wrap;
+}
+
+.report-card {
+    width: 180px;
+    padding: 25px 20px;
+    border-radius: 16px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    text-decoration: none;
+    text-align: center;
+    background: #007bff;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+.report-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* ====== INDIVIDUAL CARD COLORS ====== */
+.report-card[data-color="blue"] { background: #007bff; }
+.report-card[data-color="purple"] { background: #b249f8; }
+.report-card[data-color="green"] { background: #04b575; }
+.report-card[data-color="pink"] { background: #ff67a4; }
+.report-card[data-color="orange"] { background: #ff8c2f; }
+.report-card[data-color="gray"] { background: #6c6c6c; }
+.report-card[data-color="lightblue"] { background: #33c1ff; }
+.report-card[data-color="red"] { background: #ff5733; }
+
+@media (max-width: 768px) {
+    .report-card {
+        width: 140px;
+        padding: 20px 15px;
+    }
+    .icon {
+        font-size: 32px;
+    }
+    .report-title {
+        font-size: 28px;
+    }
+    .row-title {
+        font-size: 20px;
+    }
+}
+</style>
+
+<div class="main-wrapper">
+    <div class="content">
+        <h2 class="report-title">📥 Download Reports</h2>
+
+        <!-- LOAN REPORTS -->
+        <div class="row-title">💼 Loan Reports</div>
+        <div class="card-row">
+            <a href="{% url 'reports_list' %}?type=MTL_LOAN" class="report-card" data-color="blue">
+                <div class="icon">📘</div>
+                <div class="card-title">MTL Loan</div>
+            </a>
+            <a href="{% url 'reports_list' %}?type=FDL_LOAN" class="report-card" data-color="purple">
+                <div class="icon">💰</div>
+                <div class="card-title">FDL Loan</div>
+            </a>
+            <a href="{% url 'reports_list' %}?type=KVP_NSC_LOAN" class="report-card" data-color="green">
+                <div class="icon">📄</div>
+                <div class="card-title">KVP/NSC Loan</div>
+            </a>
+        </div>
+
+        <!-- DEPOSIT REPORTS -->
+        <div class="row-title">🏦 Deposit Reports</div>
+        <div class="card-row">
+            <a href="{% url 'reports_list' %}?type=FIXED_DEPOSITS" class="report-card" data-color="pink">
+                <div class="icon">🏦</div>
+                <div class="card-title">Fixed Deposits</div>
+            </a>
+            <a href="{% url 'reports_list' %}?type=THRIFT_FUNDS" class="report-card" data-color="orange">
+                <div class="icon">💵</div>
+                <div class="card-title">Thrift Funds</div>
+            </a>
+            <a href="{% url 'reports_list' %}?type=WELFARE_COLLECTIONS" class="report-card" data-color="gray">
+                <div class="icon">📦</div>
+                <div class="card-title">Welfare Collections</div>
+            </a>
+        </div>
+
+        <!-- OTHER REPORTS -->
+        <div class="row-title">📄 Other Reports</div>
+        <div class="card-row">
+            <a href="{% url 'other_reports_table' %}?view=receipts" class="report-card" data-color="lightblue">
+                <div class="icon">🧾</div>
+                <div class="card-title">Receipts</div>
+            </a>
+            <a href="{% url 'other_reports_table' %}?view=payments" class="report-card" data-color="red">
+                <div class="icon">💸</div>
+                <div class="card-title">Payments</div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- HIDDEN TABLES & EXCEL EXPORT SCRIPT -->
+<div style="display:none;">
+    <table id="receipts-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Loan ID</th>
+                <th>Type of Loan</th>
+                <th>Cash</th>
+                <th>Bank1</th>
+                <th>Bank2</th>
+                <th>Adjustment</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in receipts %}
+            <tr>
+                <td>{{ r.created_at|date:"d-m-Y" }}</td>
+                <td>LN{{ r.loan_id }}</td>
+                <td>{{ r.type_of_loan|default:"-" }}</td>
+                <td>{{ r.cash|default:"0.00"|floatformat:2 }}</td>
+                <td>{{ r.bank1|default:"0.00"|floatformat:2 }}</td>
+                <td>{{ r.bank2|default:"0.00"|floatformat:2 }}</td>
+                <td>{{ r.adj|default:"0.00"|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table id="payments-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Loan ID</th>
+                <th>Type of Loan</th>
+                <th>Cash</th>
+                <th>Bank1</th>
+                <th>Bank2</th>
+                <th>Adjustment</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.created_at|date:"d-m-Y" }}</td>
+                <td>{{ p.code }}</td>
+                <td>{{ p.type_of_loan|default:"-" }}</td>
+                <td>{{ p.cash|default:"0.00"|floatformat:2 }}</td>
+                <td>{{ p.bank1|default:"0.00"|floatformat:2 }}</td>
+                <td>{{ p.bank2|default:"0.00"|floatformat:2 }}</td>
+                <td>{{ p.adj|default:"0.00"|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function exportVisibleRows(tableId, filename){
+    let table = document.getElementById(tableId).cloneNode(true);
+    table.querySelectorAll("tbody tr").forEach(r => { if(r.style.display=="none") r.remove() });
+    let wb = XLSX.utils.table_to_book(table, {sheet:"Sheet1"});
+    XLSX.writeFile(wb, filename + ".xlsx");
+}
+</script>
+
+{% endblock %}

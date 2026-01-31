@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* ---------- Styles ---------- */
+.error-message { color: red; display: none; }
+.save-btn, .view-btn {
+    background-color: #4CAF50; border: none; color: white;
+    padding: 6px 10px; text-align: center; text-decoration: none;
+    display: inline-block; font-size: 12px; margin: 4px 2px; cursor: pointer;
+    border-radius: 4px; margin-left: 7%;
+}
+.view-btn { background-color: #008CBA; }
+.save-btn:hover { background-color: #45A049; }
+.view-btn:hover { background-color: #007BB5; }
+.submit-button:hover { background-color: green; color: white; }
+.editable { border: none; background: none; width: 100%; height: 100%; box-sizing: border-box; font-size: 14px; margin: 0; padding: 8px 10px; display: inline-block; }
+.editable:focus { outline: none; border: 2px solid #4CAF50; }
+.alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px 40px; border-radius: 10px; color: #fff; opacity: 0.95; z-index: 1000; font-size: 18px; text-align: center; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+.alert-success { background-color: #28A745; }
+.alert-danger { background-color: #ff0019; }
+.alert-warning { background-color: yellow; color: #212529; font-size: 16px; padding: 10px; border-radius: 5px; }
+#code_suggestions {
+    background-color: #fff; border: 1px solid #ccc; border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); position: absolute; z-index: 1000;
+    margin-top: 5px; width: 200px; max-height: 150px; overflow-y: auto;
+}
+#code_suggestions option { padding: 8px 10px; background-color: #fff; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s ease; }
+#code_suggestions option:hover { background-color: #f0f0f0; color: #333; }
+#code_suggestions option:last-child { border-bottom: none; }
+</style>
+
+<div class="content">
+    <!-- GEN NO INPUT FOR DEPOSITS -->
+    <form class="center-form1" method="post" action="{% url 'deposits' %}">
+        {% csrf_token %}
+        <div style="position: relative;">
+            <input type="text" id="gen_no_input" name="gen_no" placeholder="Gen.No." class="input-box1" autocomplete="off">
+            <select id="code_suggestions" class="input-box1" size="5" style="display:none; position:absolute; width:200px;"></select>
+            <button type="submit" class="submit-button" disabled>Submit</button>
+        </div>
+        <input type="text" name="name" placeholder="Gen_No" class="input-box1" value="{{ gen_no }}" readonly>
+        <input type="text" name="name" placeholder="Name" class="input-box1" value="{{ user_name }}" readonly>
+    </form>
+
+    <br><br>
+    <h3>RECEIPTS💰</h3><br>
+
+    <!-- NEW TABLE FORM -->
+    <div class="table-container2">
+        <form id="newTableForm" method="post" action="{% url 'submit_new_table' %}">
+            {% csrf_token %}
+            <input type="hidden" name="gen_no" value="{{ gen_no }}">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th style="color: yellow;">Loan Type</th>
+                        <th style="color: yellow;">Amount</th>
+                        <th style="color: yellow;">Cash</th>
+                        <th style="color: yellow;">Bank1</th>
+                        <th style="color: yellow;">Bank2</th>
+                        <th style="color: yellow;">Adj</th>
+                        <th style="width:140px">Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <select name="Loan Type" class="editable">
+                                <option value="">Select Loan Type</option>
+                                <option value="FIXED DEPOSITS">FIXED DEPOSITS</option>
+                                <option value="THRIFT FUNDS">THRIFT FUNDS</option>
+                                <option value="WELFARE COLLECTIONS">WELFARE COLLECTIONS</option>
+                            </select>
+                        </td>
+                        <td><input type="text" class="editable" name="Amount" placeholder="Amount"></td>
+                        <td><input type="text" class="editable" name="Cash" placeholder="Cash"></td>
+                        <td><input type="text" class="editable" name="Bank1" placeholder="Bank1"></td>
+                        <td><input type="text" class="editable" name="Bank2" placeholder="Bank2"></td>
+                        <td><input type="text" class="editable" name="Adj" placeholder="Adj"></td>
+                        <td><input type="date" class="editable payment-date" name="date"></td>
+                        <td><button type="submit" class="submit-btn">Submit</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+
+    <br><br>
+    <h3>PAYMENTS💸</h3><br>
+
+    <!-- EXISTING LOAN TABLE -->
+    <div class="table-container1">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Type of Receipt</th>
+                    <th>Ref</th>
+                    <th>Balance</th>
+                    <th>Interest</th>
+                    <th style="color: yellow;">Cash</th>
+                    <th style="color: yellow;">Bank1</th>
+                    <th style="color: yellow;">Bank2</th>
+                    <th style="color: yellow;">Adj</th>
+                    <th style="width:140px">Date</th>
+                    <th style="width:140px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in loans %}
+                <tr style="background-color: #ffffff">
+                    <td>{{ item.loan_type }}</td>
+                    <td>{{ item.loan.code }}</td>
+                    <td>{% if item.balance != 0 %}{{ item.balance }}{% endif %}</td>
+                    <td>{% if item.interest != 0 %}{{ item.interest }}{% endif %}</td>
+                    <td>{% if item.loan %}<input name="cash" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td>{% if item.loan %}<input name="bank1" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td>{% if item.loan %}<input name="bank2" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td>{% if item.loan %}<input name="adj" class="editable" placeholder="Enter Amount">{% endif %}</td>
+                    <td><input type="date" class="editable receipt-date" name="date" value="{% now 'Y-m-d' %}"></td>
+                    <td>
+                        {% if item.loan %}
+                        <button type="button" class="save-btn" data-loan-id="{{ item.loan.id }}">Save</button>
+                        <button class="view-btn">
+                            <a href="{% url 'mtl_collection' item.loan.id %}" style="text-decoration: none; color: white;">View</a>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- ---------- SCRIPT ---------- -->
+    <script>
+    $(document).ready(function() {
+
+        // ---------- GEN NO AUTOCOMPLETE ----------
+        const $depositInput = $('#gen_no_input');
+        const $depositDropdown = $('#code_suggestions');
+
+        function fetchUsers(query = '') {
+            $.ajax({
+                url: '{% url "search_user_codes" %}',
+                data: { 'term': query },
+                dataType: 'json',
+                success: function(data) {
+                    $depositDropdown.empty();
+                    if (data.length) {
+                        data.forEach(function(user) {
+                            $depositDropdown.append('<option value="' + user.code + '">' + user.code + ' - [' + user.name + ']</option>');
+                        });
+                        $depositDropdown.show();
+                        $('button[type="submit"]').prop('disabled', false);
+                    } else {
+                        $depositDropdown.hide();
+                        if(query.length > 0) showAlert('No user found matching your input.', 'warning');
+                        $('button[type="submit"]').prop('disabled', true);
+                    }
+                },
+                error: function() {
+                    $depositDropdown.hide();
+                    showAlert('An error occurred while searching.', 'danger');
+                    $('button[type="submit"]').prop('disabled', true);
+                }
+            });
+        }
+
+        // Show all users on focus
+        $depositInput.on('focus', function() { fetchUsers(''); });
+        // Filter while typing
+        $depositInput.on('keyup', function() { fetchUsers($(this).val()); });
+
+        // Click on suggestion
+        $depositDropdown.on('click', 'option', function() {
+            $depositInput.val($(this).val());
+            $depositDropdown.hide();
+            $('button[type="submit"]').prop('disabled', false);
+        });
+
+        // Hide dropdown on outside click
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#gen_no_input, #code_suggestions').length) {
+                $depositDropdown.hide();
+            }
+        });
+
+        // ---------- ALERT FUNCTION ----------
+        window.showAlert = function(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        // ---------- GET TODAY DATE ----------
+        function getTodayDate() {
+            const d = new Date();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${d.getFullYear()}-${m}-${day}`;
+        }
+
+        // Auto-fill date inputs
+        document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = getTodayDate(); });
+
+        // ---------- SAVE BUTTONS ----------
+        const saveButtons = document.querySelectorAll('.save-btn');
+        function clearRowInputs(row) {
+            ['cash','bank1','bank2','adj'].forEach(name => {
+                const inp = row.querySelector(`input[name="${name}"]`);
+                if(inp) inp.value = '';
+            });
+        }
+        function showLoader() {
+            const loader = document.createElement('div');
+            loader.className = 'alert alert-warning';
+            loader.textContent = 'Please wait...';
+            loader.style.backgroundColor = 'yellow';
+            loader.style.color = 'black';
+            document.body.appendChild(loader);
+            return loader;
+        }
+        function hideLoader(loader) { loader.remove(); }
+
+        saveButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const loanId = this.dataset.loanId;
+                const cash = row.querySelector('input[name="cash"]').value || '0';
+                const bank1 = row.querySelector('input[name="bank1"]').value || '0';
+                const bank2 = row.querySelector('input[name="bank2"]').value || '0';
+                const adj = row.querySelector('input[name="adj"]').value || '0';
+                const date = row.querySelector('input[name="date"]').value || getTodayDate();
+
+                if([cash,bank1,bank2,adj].every(v=>parseFloat(v)===0)){
+                    showAlert('Please enter at least one amount.', 'warning'); return;
+                }
+
+                const formData = new FormData();
+                formData.append('loan_id', loanId);
+                formData.append('cash', cash);
+                formData.append('bank1', bank1);
+                formData.append('bank2', bank2);
+                formData.append('adj', adj);
+                formData.append('date', date);
+
+                const loader = showLoader();
+
+                fetch('{% url "deposits" %}', {method:'POST', body:formData, headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+                .then(res=>res.json())
+                .then(data=>{
+                    hideLoader(loader);
+                    if(data.status==='success'){
+                        showAlert('Loan details updated successfully!', 'success');
+                        clearRowInputs(row);
+                        setTimeout(()=>window.location.reload(), 3000);
+                    } else { showAlert('Error: '+data.message,'danger'); }
+                })
+                .catch(err=>{ hideLoader(loader); showAlert('An error occurred.', 'danger'); console.error(err); });
+            });
+        });
+
+        // ---------- NEW TABLE FORM ----------
+        const newTableForm = document.getElementById('newTableForm');
+        newTableForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            const formData = new FormData(newTableForm);
+            const loanType = formData.get('Loan Type');
+            const amount = parseFloat(formData.get('Amount'))||0;
+            const cash = parseFloat(formData.get('Cash'))||0;
+            const bank1 = parseFloat(formData.get('Bank1'))||0;
+            const bank2 = parseFloat(formData.get('Bank2'))||0;
+            const online = parseFloat(formData.get('Online'))||0;
+            const adj = parseFloat(formData.get('Adj'))||0;
+
+            if(!loanType){showAlert("Select Loan Type","warning"); return;}
+            if(!amount){showAlert("Enter Amount","warning"); return;}
+            if(!cash && !bank1 && !bank2 && !online && !adj){showAlert("Enter at least one value","warning"); return;}
+            if(amount !== (cash+bank1+bank2+online+adj)){showAlert(`Amount ${amount} ≠ ${cash+bank1+bank2+online+adj}`,'warning'); return;}
+
+            formData.set('date', formData.get('date')||getTodayDate());
+            const loader = showLoader();
+            fetch('{% url "submit_new_table" %}', {method:'POST', body:formData, headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+            .then(res=>res.json())
+            .then(data=>{ hideLoader(loader); if(data.status==='success'){showAlert('Loan added successfully!','success'); setTimeout(()=>window.location.reload(),2000);} else{showAlert('Error: '+data.message,'danger');} })
+            .catch(err=>{ hideLoader(loader); showAlert('An error occurred.', 'danger'); console.error(err); });
+        });
+
+    }); // document ready
+    </script>
+
+{% endblock %}

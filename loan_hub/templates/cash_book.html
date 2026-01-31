@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ledger Book{% endblock %}
+
+{% block content %}
+<style>
+
+    
+    .add-cash-button {
+    display: inline-block;
+    background-color: #218838; /* Green color */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+.add-cash-button:hover {
+    background-color: #882121; /* Darker green on hover */
+}
+    .ledger-book-content {
+        overflow-y: auto;
+    }
+    .date-filter {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+    .date-filter label {
+        margin-right: 10px;
+        font-weight: bold;
+        color: #333;
+    }
+    .date-filter input[type="date"] {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        margin-right: 20px;
+        background-color: #f9f9f9;
+        transition: border-color 0.3s ease;
+    }
+    .date-filter input[type="date"]:focus {
+        border-color: #328b60;
+        outline: none;
+    }
+</style>
+<div class="ledger-book-content">
+    <!-- Summary Table -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+    <!-- <h1>Summary Table</h1>
+    <a href="{% url 'cash_entry' %}" class="add-cash-button">
+        💵 + Add Cash
+    </a> -->
+</div>
+
+
+
+<div style="padding:0 0 10px 0;">
+
+
+
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <h3 style="margin:0; font-weight:600; color:#333;">
+            Cash Overview
+        </h3>
+        <a href="{% url 'cash_entry' %}" class="add-cash-button">
+            💵 + Add Cash
+        </a>
+    </div>
+
+    <div class="cw-cards-wrapper">
+
+
+        <!-- Cash -->
+        <div class="cw-card">
+            <h5>Cash</h5>
+            <h3 style="color:#2e7d32;">
+                ₹ {{ withdrawals.cash|floatformat:2 }}
+            </h3>
+        </div>
+
+        <!-- Bank 1 -->
+        <div class="cw-card">
+            <h5>Bank 1</h5>
+            <h3 style="color:#1565c0;">
+                ₹ {{ withdrawals.bank1|floatformat:2 }}
+            </h3>
+        </div>
+
+        <!-- Bank 2 -->
+        <div class="cw-card">
+            <h5>Bank 2</h5>
+            <h3 style="color:#0277bd;">
+                ₹ {{ withdrawals.bank2|floatformat:2 }}
+            </h3>
+        </div>
+
+        <!-- Adjustment -->
+        <div class="cw-card">
+            <h5>Adjustment</h5>
+            <h3 style="color:#f9a825;">
+                ₹ {{ withdrawals.adj|floatformat:2 }}
+            </h3>
+        </div>
+
+    </div>
+</div>
+
+    
+<!-- Dynamic Summary Table -->
+<!-- Dynamic Summary Table -->
+<!-- Dynamic Summary Table -->
+<div style="margin:0; padding:0 0 12px 0;">
+
+    <h3 style="
+        margin:0 0 8px 0;
+        padding:0;
+        color:#333;
+        font-size:1.6rem;
+    ">
+        Summary
+    </h3>
+
+    <table 
+        id="summary-table"
+        style="
+            width:100%;
+            border-collapse:collapse;
+            margin:0;
+            padding:0;
+            border:1px solid #cfcfcf;
+            background:#fff;
+        "
+    >
+        <thead>
+            <tr style="background-color:#328b60; color:white; height:38px;">
+                <th style="
+                    text-align:center;
+                    padding:6px;
+                    border:1px solid #cfcfcf;
+                ">
+                    Payments Total
+                </th>
+                <th style="
+                    text-align:center;
+                    padding:6px;
+                    border:1px solid #cfcfcf;
+                ">
+                    Receipts Total
+                </th>
+                <th style="
+                    text-align:center;
+                    padding:6px;
+                    border:1px solid #cfcfcf;
+                ">
+                    Balance (Receipts - Payments)
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr style="text-align:center; height:36px;">
+                <td id="summary-payments" style="
+                    padding:6px;
+                    border:1px solid #cfcfcf;
+                ">
+                    ₹ 0.00
+                </td>
+                <td id="summary-receipts" style="
+                    padding:6px;
+                    border:1px solid #cfcfcf;
+                ">
+                    ₹ 0.00
+                </td>
+                <td id="summary-balance" style="
+                    padding:6px;
+                    border:1px solid #cfcfcf;
+                    font-weight:600;
+                ">
+                    ₹ 0.00
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+
+
+<script>
+// Calculate summary dynamically from tables
+function calculateSummary() {
+    function sumColumn(tableId) {
+        let table = document.getElementById(tableId);
+        let rows = table.querySelectorAll('tbody tr');
+        let total = 0;
+        rows.forEach(row => {
+            if (row.style.display !== 'none') {
+                let cash = parseFloat(row.cells[3].innerText.replace(/,/g,'')) || 0;
+                let bank1 = parseFloat(row.cells[4].innerText.replace(/,/g,'')) || 0;
+                let bank2 = parseFloat(row.cells[5].innerText.replace(/,/g,'')) || 0;
+                let adj = parseFloat(row.cells[6].innerText.replace(/,/g,'')) || 0;
+                total += cash + bank1 + bank2 + adj;
+            }
+        });
+        return total;
+    }
+
+    const receiptsTotal = sumColumn('receipts-table');
+    const paymentsTotal = sumColumn('payments-table');
+    const balance = receiptsTotal - paymentsTotal;
+
+    document.getElementById('summary-receipts').innerText = '₹ ' + receiptsTotal.toFixed(2);
+    document.getElementById('summary-payments').innerText = '₹ ' + paymentsTotal.toFixed(2);
+    document.getElementById('summary-balance').innerText = '₹ ' + balance.toFixed(2);
+}
+
+// Run initially
+document.addEventListener('DOMContentLoaded', calculateSummary);
+
+// Also recalculate if you apply date filters
+function recalcSummaryAfterFilter() {
+    calculateSummary();
+}
+
+// You can call recalcSummaryAfterFilter() after filtering rows
+</script>
+
+
+    <!-- Date Filters -->
+    <div class="date-filter">
+        <label for="receipt-start-date">Receipts Start Date:</label>
+        <input type="date" id="receipt-start-date" name="receipt-start-date">
+        <label for="receipt-end-date">End Date:</label>
+        <input type="date" id="receipt-end-date" name="receipt-end-date">
+    </div>
+
+    <!-- Receipts Table -->
+     <button onclick="exportVisibleRows('receipts-table','Receipts_Report')" 
+        style="background:#218838;color:white;padding:6px 12px;border-radius:4px;margin-bottom:10px;">
+    ⬇ Download Receipts Excel
+</button>
+    <h1>Receipts Table</h1>
+    <div class="table-container">
+        <table class="styled-table" id="receipts-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Loan Id</th>
+                    <th>Loan Type</th>
+                    <th>Cash</th>
+                    <th>Bank 1</th>
+                    <th>Bank 2</th>
+                    <th>Adjustment</th>
+                </tr>
+            </thead>
+<tbody>
+    {% for transaction in transactions %}
+        <tr data-date="{{ transaction.created_at|date:'Y-m-d' }}">
+            <td>{{ transaction.created_at|date:"d-m-Y" }}</td>
+
+            {# ===== LOAN ID / CODE (FINAL FIX) ===== #}
+            <td>
+                {% if transaction.loan %}
+                    {% if transaction.loan.code %}
+                        {{ transaction.loan.code }}   {# LoanRepayment #}
+                    {% else %}
+                        {{ transaction.loan.id }}     {# CashEntry / Transfer #}
+                    {% endif %}
+                {% else %}
+                    {{ transaction.code }}            {# Loan / Deposit #}
+                {% endif %}
+            </td>
+
+            {# ===== TYPE OF LOAN ===== #}
+            <td>
+                {% if transaction.loan %}
+                    {{ transaction.loan.type_of_loan }}
+                {% elif transaction.type_of_loan %}
+                    {{ transaction.type_of_loan }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>{{ transaction.cash|default:"0.00"|floatformat:2 }}</td>
+            <td>{{ transaction.bank1|default:"0.00"|floatformat:2 }}</td>
+            <td>{{ transaction.bank2|default:"0.00"|floatformat:2 }}</td>
+            <td>{{ transaction.adj|default:"0.00"|floatformat:2 }}</td>
+        </tr>
+    {% endfor %}
+</tbody>
+
+
+            <tfoot style="background-color:#328b60;">
+                <tr>
+                    <th style="color: white; font-weight: bold;font-size: 20px;">Total</th>
+                    <td></td>
+                    <td></td>
+                    <td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ transactions_totals.total_cash|default:"0.00"|floatformat:2 }}
+</td>
+<td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ transactions_totals.total_bank1|default:"0.00"|floatformat:2 }}
+</td>
+<td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ transactions_totals.total_bank2|default:"0.00"|floatformat:2 }}
+</td>
+<td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ transactions_totals.total_adj|default:"0.00"|floatformat:2 }}
+</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <div class="date-filter">
+        <label for="payment-start-date">Payments Start Date:</label>
+        <input type="date" id="payment-start-date" name="payment-start-date">
+        <label for="payment-end-date">End Date:</label>
+        <input type="date" id="payment-end-date" name="payment-end-date">
+    </div>
+    <!-- Payments Table -->
+
+
+    <button onclick="exportVisibleRows('payments-table','Payments_Report')" 
+        style="background:#218838;color:white;padding:6px 12px;border-radius:4px;margin-bottom:10px;">
+    ⬇ Download Payments Excel
+</button>
+    <h1>Payments Table</h1>
+    <div class="table-container">
+        <table class="styled-table" id="payments-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Loan Id</th>
+                    <th>Loan Type</th>
+                    <th>Cash</th>
+                    <th>Bank 1</th>
+                    <th>Bank 2</th>
+                    <th>Adjustment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                   <tr data-date="{{ payment.created_at|date:"Y-m-d" }}">
+    <td>{{ payment.created_at|date:"d-m-Y" }}</td>
+    <td>{{ payment.code|default:"-" }}</td>
+    <td>{{ payment.type_of_loan|default:"-" }}</td>
+    <td>{{ payment.cash|default:"0.00"|floatformat:2 }}</td>
+    <td>{{ payment.bank1|default:"0.00"|floatformat:2 }}</td>
+    <td>{{ payment.bank2|default:"0.00"|floatformat:2 }}</td>
+    <td>{{ payment.adj|default:"0.00"|floatformat:2 }}</td>
+</tr>
+
+                {% endfor %}
+            </tbody>
+            <tfoot style="background-color: #328b60;">
+                <tr>
+                    <th style="color: white; font-weight: bold;font-size: 20px;">Total</th>
+                    <td></td>
+                    <td></td>
+                    <td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ payments_totals.total_cash|default:"0.00"|floatformat:2 }}
+</td>
+<td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ payments_totals.total_bank1|default:"0.00"|floatformat:2 }}
+</td>
+<td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ payments_totals.total_bank2|default:"0.00"|floatformat:2 }}
+</td>
+<td style="color: white; font-weight: bold; font-size: 20px;">
+    {{ payments_totals.total_adj|default:"0.00"|floatformat:2 }}
+</td>
+
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Internal CSS -->
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: auto;
+    }
+
+    .ledger-book-content {
+        margin: 20px;
+    }
+
+    .table-container {
+        min-height: 300px;
+        overflow-x: auto;
+    }
+    .styled-table tfoot {
+        font-weight: bold;
+        position: sticky;
+        bottom: 0;
+        margin: 20px;
+        z-index: 1;
+    }
+    .styled-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+
+    .styled-table thead {
+        background-color: #f4f4f4;
+    }
+
+    .styled-table th, .styled-table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .styled-table tfoot {
+        background-color: #f4f4f4;
+        font-weight: bold;
+    }
+
+    .styled-table tfoot th, .styled-table tfoot td {
+        text-align: right;
+    }
+
+    .grand-total {
+        color: red;
+        font-weight: bold;
+    }
+
+    .table-container h2 {
+        margin-top: 20px;
+        font-size: 1.5em;
+        color: #333;
+    }
+</style>
+
+<!-- Internal JavaScript -->
+<script>
+
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const receiptStartDate = document.getElementById('receipt-start-date');
+        const receiptEndDate = document.getElementById('receipt-end-date');
+        const paymentStartDate = document.getElementById('payment-start-date');
+        const paymentEndDate = document.getElementById('payment-end-date');
+        
+        function filterTable(tableId, startDateId, endDateId) {
+            const table = document.getElementById(tableId);
+            const rows = table.querySelectorAll('tbody tr');
+            const startDate = new Date(document.getElementById(startDateId).value);
+            const endDate = new Date(document.getElementById(endDateId).value);
+
+            rows.forEach(row => {
+                const rowDate = new Date(row.getAttribute('data-date'));
+                if ((startDate === "Invalid Date" || rowDate >= startDate) &&
+                    (endDate === "Invalid Date" || rowDate <= endDate)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        receiptStartDate.addEventListener('change', () => filterTable('receipts-table', 'receipt-start-date', 'receipt-end-date'));
+        receiptEndDate.addEventListener('change', () => filterTable('receipts-table', 'receipt-start-date', 'receipt-end-date'));
+        paymentStartDate.addEventListener('change', () => filterTable('payments-table', 'payment-start-date', 'payment-end-date'));
+        paymentEndDate.addEventListener('change', () => filterTable('payments-table', 'payment-start-date', 'payment-end-date'));
+    });
+
+
+
+
+
+    
+</script>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function exportVisibleRows(tableId, filename){
+    let table=document.getElementById(tableId).cloneNode(true);
+    table.querySelectorAll("tbody tr").forEach(r=>{ if(r.style.display=="none")r.remove() });
+    let wb=XLSX.utils.table_to_book(table,{sheet:"Sheet1"});
+    XLSX.writeFile(wb,filename+".xlsx");
+}
+</script>
+<style>
+.cw-card{
+    border:1px solid #e0e0e0;
+    padding:20px;
+    width:220px;
+    border-radius:12px;
+    background:#fff;
+    box-shadow:0 6px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.cw-card:hover{
+    transform: translateY(-5px);
+    box-shadow:0 10px 20px rgba(0,0,0,0.15);
+}
+.cw-card h5{
+    margin:0;
+    color:#555;
+    font-weight:500;
+}
+.cw-card h3{
+    margin-top:12px;
+}
+</style>
+<style>
+.cw-cards-wrapper{
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-start;   /* left aligned like withdrawals page */
+    align-items: stretch;
+}
+
+.cw-card{
+    border:1px solid #e0e0e0;
+    padding:20px;
+    width:220px;
+    border-radius:12px;
+    background:#fff;
+    box-shadow:0 6px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cw-card:hover{
+    transform: translateY(-5px);
+    box-shadow:0 10px 20px rgba(0,0,0,0.15);
+}
+
+.cw-card h5{
+    margin:0;
+    color:#555;
+    font-weight:500;
+}
+
+.cw-card h3{
+    margin-top:12px;
+}
+</style>
+
+
+{% endblock %}
