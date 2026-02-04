@@ -324,6 +324,9 @@ h3 {
             <th>Bank1</th>
             <th>Bank2</th>
             <th>Total</th>
+            <th>Edit</th>
+            </a>
+</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -340,6 +343,7 @@ h3 {
             <th>Bank1</th>
             <th>Bank2</th>
             <th>Total</th>
+            <th>Edit</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -592,6 +596,9 @@ $.get("{% url 'fetch_receipts' %}", { gen_no: gen_no }, function(res) {
                 <td>${r.bank1}</td>
                 <td>${r.bank2}</td>
                 <td>${r.amount}</td>
+                <td>
+        <a href="/other-cash/edit/${r.id}/" class="view-btn">Edit</a>
+    </td>
             </tr>`);
         });
     } else {
@@ -614,6 +621,9 @@ $.get("{% url 'fetch_payments' %}", { gen_no: gen_no }, function(res) {
                 <td>${p.bank1}</td>
                 <td>${p.bank2}</td>
                 <td>${p.amount}</td>
+                <td>
+        <a href="/other-cash/edit/${r.id}/" class="view-btn">Edit</a>
+    </td>
             </tr>`);
         });
     } else {

@@ -5,17 +5,6 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-# ---------------- Helper Function ----------------
-# def generate_unique_code(model_class, prefix, length=4):
-#     """
-#     Generate a unique code for a model with the given prefix.
-#     Ensures no duplicates exist in the database.
-#     """
-#     while True:
-#         random_number = ''.join(random.choices('0123456789', k=length))
-#         code = f"{prefix}{random_number}"
-#         if not model_class.objects.filter(code=code).exists():
-#             return code
 
 from django.db import models
 from django.utils import timezone
@@ -57,27 +46,6 @@ class Receipt(models.Model):
     bank2 = models.CharField(max_length=255)
     adj = models.CharField(max_length=255)
     actions = models.CharField(max_length=50)
-
-
-# class User(models.Model):
-#     name = models.CharField(max_length=100)
-#     Mobile = models.CharField(max_length=20)
-#     Address = models.CharField(max_length=255)
-#     IFSCcode = models.CharField(max_length=100, blank=True)
-#     AccountNo1 = models.IntegerField()
-#     AccountNo2 = models.IntegerField()
-#     IFSCcode2 = models.CharField(max_length=100, blank=True)
-#     Age = models.CharField(max_length=3)
-#     Email = models.EmailField()
-#     code = models.CharField(max_length=10, blank=True, null=True, unique=True)
-
-#     BankAccountName = models.CharField(max_length=100)
-#     BranchName = models.CharField(max_length=100)
-#     BankAccountName2 = models.CharField(max_length=100)
-#     BranchName2 = models.CharField(max_length=100)
-
-#     def __str__(self):
-#         return self.name
 
 
 class User(models.Model):
@@ -153,8 +121,6 @@ class Loan(models.Model):
     source = models.CharField(max_length=100, blank=True, default='-')
 
 
-    # created_at = models.DateTimeField(auto_now_add=True)
-    # created_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(default=datetime.now)
 
     loan_status = models.CharField(max_length=50, default='Active')
@@ -269,12 +235,6 @@ def set_user_code(sender, instance, created, **kwargs):
         instance.code = generate_unique_code(User, 'CN')
         instance.save(update_fields=['code'])
 
-# @receiver(post_save, sender=Loan)
-# def set_loan_code(sender, instance, created, **kwargs):
-#     if created and not instance.code:
-#         instance.code = generate_unique_code(Loan, 'LN')
-#         instance.save(update_fields=['code'])
-
 LOAN_CODE_PREFIX = {
     'MTL LOAN': 'MTL',
     'FDL LOAN': 'FDL',
@@ -371,13 +331,6 @@ class CashEntry(models.Model):
         return f"{self.code} - {self.type_of_cash} - {self.amount} - {self.type_of_loan}"
 
 
-
-
-
-
-
-# day @07/01/2026
-# day @07/01/2026
 from django.db import models
 from decimal import Decimal
 

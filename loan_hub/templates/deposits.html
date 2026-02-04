@@ -27,6 +27,24 @@
 #code_suggestions option { padding: 8px 10px; background-color: #fff; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s ease; }
 #code_suggestions option:hover { background-color: #f0f0f0; color: #333; }
 #code_suggestions option:last-child { border-bottom: none; }
+
+
+.edit-btn {
+    background-color: #ffc107;
+    color: #343a40;
+}
+
+.edit-btn:hover {
+    background-color: #e0a800;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+}
+
+.delete-btn:hover {
+    background-color: #bd2130;
+}
 </style>
 
 <div class="content">
@@ -121,6 +139,9 @@
                     <td>
                         {% if item.loan %}
                         <button type="button" class="save-btn" data-loan-id="{{ item.loan.id }}">Save</button>
+                        <a href="{% url 'edit_loan' item.loan.id %}">
+            <button type="button" class="view-btn edit-btn">Edit</button>
+        </a>
                         <button class="view-btn">
                             <a href="{% url 'mtl_collection' item.loan.id %}" style="text-decoration: none; color: white;">View</a>
                         </button>

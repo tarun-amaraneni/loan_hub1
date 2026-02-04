@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+/* ===========================
+   EDIT OTHER CASH TRANSACTION
+   =========================== */
+
+h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.editable, select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.save-btn,
+.view-btn,
+.delete-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+.save-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.save-btn:hover {
+    background-color: #43a047;
+}
+
+.view-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.view-btn:hover {
+    background-color: #1e88e5;
+}
+
+.delete-btn {
+    background-color: #e53935;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #c62828;
+}
+
+.styled-table {
+    width: auto;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.styled-table th {
+    text-align: center;
+    background: #f2f2f2;
+    padding: 8px;
+}
+
+.styled-table td {
+    padding: 8px;
+}
+</style>
+
+<h3>EDIT TRANSACTION ✏️</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <table class="styled-table">
+
+        <tr>
+            <th>Transaction Type</th>
+            <td>
+                <select name="transaction_type">
+                    <option value="RECEIPT" {% if transaction.transaction_type == "RECEIPT" %}selected{% endif %}>
+                        Receipt
+                    </option>
+                    <option value="PAYMENT" {% if transaction.transaction_type == "PAYMENT" %}selected{% endif %}>
+                        Payment
+                    </option>
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Type of Loan</th>
+            <td>
+                <input class="editable" name="type_of_loan" value="{{ transaction.type_of_loan }}">
+            </td>
+        </tr>
+
+        <tr>
+            <th>Gen No</th>
+            <td>
+                <input class="editable" value="{{ transaction.gen_no }}" readonly>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Cash</th>
+            <td><input class="editable" name="cash" value="{{ transaction.cash }}"></td>
+        </tr>
+
+        <tr>
+            <th>Bank1</th>
+            <td><input class="editable" name="bank1" value="{{ transaction.bank1 }}"></td>
+        </tr>
+
+        <tr>
+            <th>Bank2</th>
+            <td><input class="editable" name="bank2" value="{{ transaction.bank2 }}"></td>
+        </tr>
+
+        <tr>
+            <th>Total Amount</th>
+            <td>
+                <input class="editable" value="{{ transaction.amount }}" readonly>
+            </td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <button type="submit" class="save-btn">Update</button>
+    <a href="{% url 'loans' %}"><button type="button" class="view-btn">Cancel</button></a>
+    <button type="button" class="delete-btn" onclick="deleteTransaction({{ transaction.id }})">Delete</button>
+</form>
+
+<script>
+function deleteTransaction(id) {
+    if (!confirm("This will permanently delete this transaction. Continue?")) {
+        return;
+    }
+
+    fetch("{% url 'delete_other_cash' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: "transaction_id=" + id
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Transaction deleted successfully");
+            window.location.href = "{% url 'loans' %}";
+        } else {
+            alert(data.message || "Delete failed");
+        }
+    });
+}
+</script>
+
+{% endblock %}

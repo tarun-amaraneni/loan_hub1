@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path
 from .views import *
 from .views import *
+from . import views
+
 
 
 urlpatterns = [
@@ -150,6 +152,11 @@ path('users/delete/<int:id>/', delete_user, name='delete_user'),
 
 path('loanadd/', loanadd, name='loanadd'),
 
+
+path('loans/edit/<int:loan_id>/', views.edit_loan, name='edit_loan'),
+path("delete-loan/", views.delete_loan, name="delete_loan"),
+path("other-cash/edit/<int:id>/", views.edit_other_cash_transaction, name="edit_other_cash"),
+path("other-cash/delete/", views.delete_other_cash, name="delete_other_cash"),
 
 
 
