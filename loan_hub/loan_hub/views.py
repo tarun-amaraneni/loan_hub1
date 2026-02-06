@@ -1160,13 +1160,70 @@ def search_user_codes(request):
         return JsonResponse([], safe=False)  # Return an empty list if no matches are found
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+# from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
+# from django.db.models import F
+# from .models import Loan, InterestRate
+
+# EXCLUDED_TYPES = ['ADMISSION FEES', 'OTHER RECEIPTS', 'CASH WITHDRAWALS']
+# def update_loans_interest():
+#     print("DAILY INTEREST JOB STARTED")
+
+#     loans = Loan.objects.filter(
+#         loan_status='Active'
+#     ).exclude(type_of_loan__in=EXCLUDED_TYPES)
+
+#     print("Loans found:", loans.count())
+
+#     for loan in loans:
+#         loan_amount = loan.amount
+#         if not loan_amount:
+#             continue
+
+#         try:
+#             rate_obj = InterestRate.objects.get(
+#                 Type_of_Receipt=loan.type_of_loan
+#             )
+#             annual_rate = Decimal(rate_obj.interest) / Decimal('100')
+#         except InterestRate.DoesNotExist:
+#             print("Rate missing for:", loan.type_of_loan)
+#             continue
+
+#         daily_interest = loan_amount * annual_rate / Decimal('365')
+
+#         if daily_interest % 1 == Decimal('0.50'):
+#             daily_interest = daily_interest.quantize(
+#                 Decimal('1'), rounding=ROUND_DOWN
+#             )
+#         else:
+#             daily_interest = daily_interest.quantize(
+#                 Decimal('1'), rounding=ROUND_HALF_UP
+#             )
+
+#         print(f"Loan {loan.id} → interest added = {daily_interest}")
+
+#         Loan.objects.filter(pk=loan.pk).update(
+#             interest=F('interest') + daily_interest
+#         )
+
+#     print("DAILY INTEREST JOB FINISHED")
+
+
+
+
 from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 from django.db.models import F
 from .models import Loan, InterestRate
+from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
+from django.db.models import F
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 EXCLUDED_TYPES = ['ADMISSION FEES', 'OTHER RECEIPTS', 'CASH WITHDRAWALS']
+
 def update_loans_interest():
     print("DAILY INTEREST JOB STARTED")
+
+    now = timezone.now()  # current datetime
 
     loans = Loan.objects.filter(
         loan_status='Active'
@@ -1175,37 +1232,51 @@ def update_loans_interest():
     print("Loans found:", loans.count())
 
     for loan in loans:
-        loan_amount = loan.amount
-        if not loan_amount:
+        print("\n--- Loan", loan.id, "---")
+        print("Amount:", loan.amount)
+        print("Type:", repr(loan.type_of_loan))
+        print("Interest so far:", loan.interest)
+        print("Created at:", loan.created_at)
+
+        # Skip loans whose created_at is in the future
+        if loan.created_at > now:
+            print(f"⛔ Skipped: loan {loan.gen_no} is a future loan")
+            continue
+
+        if not loan.amount:
+            print("⛔ Skipped: amount is empty")
             continue
 
         try:
             rate_obj = InterestRate.objects.get(
                 Type_of_Receipt=loan.type_of_loan
             )
+            print("✅ Rate found:", rate_obj.interest)
             annual_rate = Decimal(rate_obj.interest) / Decimal('100')
         except InterestRate.DoesNotExist:
-            print("Rate missing for:", loan.type_of_loan)
+            print("⛔ Rate missing for:", repr(loan.type_of_loan))
             continue
 
-        daily_interest = loan_amount * annual_rate / Decimal('365')
+        daily_interest = loan.amount * annual_rate / Decimal('365')
+        print("Raw daily interest:", daily_interest)
 
-        if daily_interest % 1 == Decimal('0.50'):
-            daily_interest = daily_interest.quantize(
-                Decimal('1'), rounding=ROUND_DOWN
-            )
+        fractional = daily_interest % 1
+        if fractional == Decimal('0.5'):
+            daily_interest = daily_interest.quantize(Decimal('1'), rounding=ROUND_DOWN)
         else:
-            daily_interest = daily_interest.quantize(
-                Decimal('1'), rounding=ROUND_HALF_UP
-            )
+            daily_interest = daily_interest.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
 
-        print(f"Loan {loan.id} → interest added = {daily_interest}")
+        print("Final interest added:", daily_interest)
 
+        # Update interest safely
         Loan.objects.filter(pk=loan.pk).update(
-            interest=F('interest') + daily_interest
+            interest=Coalesce(F('interest'), Decimal('0')) + daily_interest
         )
 
     print("DAILY INTEREST JOB FINISHED")
+
+
+
 import time
 from decimal import Decimal
 from threading import Thread
@@ -2590,55 +2661,129 @@ def cash_transfer(request):
 
     return redirect("cash_withdrawals")
 
-from django.http import JsonResponse
+# from django.http import JsonResponse
+# from decimal import Decimal
+# from .models import OtherCashTransaction
+
+# def others(request):
+#     if request.method == "POST":
+#         try:
+#             gen_no = request.POST.get('gen_no')
+#             transaction_type = request.POST.get('transaction_type')
+#             type_of_loan = request.POST.get('type_of_loan')
+
+#             if not gen_no or not transaction_type or not type_of_loan:
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'Missing required fields'
+#                 })
+
+#             cash  = Decimal(request.POST.get('cash', '0') or '0')
+#             bank1 = Decimal(request.POST.get('bank1', '0') or '0')
+#             bank2 = Decimal(request.POST.get('bank2', '0') or '0')
+
+#             amount = cash + bank1 + bank2  # ✅ calculated once
+
+#             OtherCashTransaction.objects.create(
+#                 gen_no=gen_no,
+#                 transaction_type=transaction_type,
+#                 type_of_loan=type_of_loan,
+#                 cash=cash,
+#                 bank1=bank1,
+#                 bank2=bank2,
+#                 amount=amount,  # ✅ saved in DB
+#             )
+
+#             return JsonResponse({
+#                 'status': 'success',
+#                 'message': 'Transaction saved successfully'
+#             })
+
+#         except Exception as e:
+#             print("OTHER CASH ERROR:", e)
+#             return JsonResponse({
+#                 'status': 'error',
+#                 'message': str(e)
+#             })
+
+#     return JsonResponse({
+#         'status': 'error',
+#         'message': 'Invalid request'
+#     })
+
+
+
 from decimal import Decimal
-from .models import OtherCashTransaction
+from datetime import datetime, time
+from django.http import JsonResponse
+from django.shortcuts import render
+from .models import User, OtherCashTransaction
+
 
 def others(request):
-    if request.method == "POST":
+    gen_no = None
+    user_name = None
+
+    # ---------- GET USER (NON-AJAX FORM SUBMIT) ----------
+    if request.method == 'POST' and 'gen_no' in request.POST and not request.headers.get('x-requested-with'):
+        gen_no = request.POST.get('gen_no')
+        user = User.objects.filter(code=gen_no).first()
+        user_name = user.name if user else None
+
+    # ---------- ADD RECEIPT / PAYMENT (AJAX) ----------
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+
+        def d(val):
+            try:
+                return Decimal(val or 0)
+            except:
+                return Decimal('0')
+
+        data = request.POST
+        gen_no = data.get('gen_no')
+
+        # 🔍 FETCH USER BY GEN NO
+        user = User.objects.filter(code=gen_no).first()
+        user_name = user.name if user else None
+
+        # ✅ Parse user-selected date
+        date_str = data.get('date')
+        if not date_str:
+            return JsonResponse({'status': 'error', 'message': 'Please select a date'})
+
         try:
-            gen_no = request.POST.get('gen_no')
-            transaction_type = request.POST.get('transaction_type')
-            type_of_loan = request.POST.get('type_of_loan')
-
-            if not gen_no or not transaction_type or not type_of_loan:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Missing required fields'
-                })
-
-            cash  = Decimal(request.POST.get('cash', '0') or '0')
-            bank1 = Decimal(request.POST.get('bank1', '0') or '0')
-            bank2 = Decimal(request.POST.get('bank2', '0') or '0')
-
-            amount = cash + bank1 + bank2  # ✅ calculated once
-
-            OtherCashTransaction.objects.create(
-                gen_no=gen_no,
-                transaction_type=transaction_type,
-                type_of_loan=type_of_loan,
-                cash=cash,
-                bank1=bank1,
-                bank2=bank2,
-                amount=amount,  # ✅ saved in DB
+            created_at = datetime.combine(
+                datetime.strptime(date_str, "%Y-%m-%d").date(),
+                time.min
             )
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid date format'})
 
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Transaction saved successfully'
-            })
+        # ---------- CREATE TRANSACTION ----------
+        txn = OtherCashTransaction.objects.create(
+            transaction_type=data.get('transaction_type'),  # RECEIPT / PAYMENT
+            gen_no=gen_no,
+            name=user_name,              # ✅ AUTO-FILLED NAME
+            type_of_loan=data.get('type_of_loan'),
+            cash=d(data.get('cash')),
+            bank1=d(data.get('bank1')),
+            bank2=d(data.get('bank2')),
+            created_at=created_at
+        )
 
-        except Exception as e:
-            print("OTHER CASH ERROR:", e)
-            return JsonResponse({
-                'status': 'error',
-                'message': str(e)
-            })
+        return JsonResponse({
+            'status': 'success',
+            'name': user_name,
+            'amount': str(txn.amount)
+        })
 
-    return JsonResponse({
-        'status': 'error',
-        'message': 'Invalid request'
+    # ---------- PAGE RENDER ----------
+    return render(request, 'others.html', {
+        'gen_no': gen_no,
+        'user_name': user_name,
     })
+
+
 
 from decimal import Decimal
 from django.shortcuts import render
@@ -2717,6 +2862,42 @@ def others(request):
     })
 
 
+# from django.http import JsonResponse
+# from .models import OtherCashTransaction
+# from decimal import Decimal
+
+# def save_other_cash_transaction(request):
+#     if request.method == "POST":
+#         gen_no = request.POST.get("gen_no")
+#         transaction_type = request.POST.get("transaction_type")
+#         type_of_loan = request.POST.get("type_of_loan")
+#         cash = request.POST.get("cash") or '0'
+#         bank1 = request.POST.get("bank1") or '0'
+#         bank2 = request.POST.get("bank2") or '0'
+
+#         try:
+#             cash = Decimal(cash)
+#             bank1 = Decimal(bank1)
+#             bank2 = Decimal(bank2)
+#         except:
+#             return JsonResponse({"status":"error", "message":"Invalid input"})
+
+#         OtherCashTransaction.objects.create(
+#             gen_no=gen_no,
+#             transaction_type=transaction_type,
+#             type_of_loan=type_of_loan,
+#             cash=cash,
+#             bank1=bank1,
+#             bank2=bank2
+#             # amount will be calculated automatically in save()
+#         )
+#         return JsonResponse({"status":"success"})
+
+#     return JsonResponse({"status":"error", "message":"Invalid request"})
+
+
+
+
 from django.http import JsonResponse
 from .models import OtherCashTransaction
 from decimal import Decimal
@@ -2749,6 +2930,8 @@ def save_other_cash_transaction(request):
         return JsonResponse({"status":"success"})
 
     return JsonResponse({"status":"error", "message":"Invalid request"})
+
+
 
 def other_reports_table(request):
     view_mode = request.GET.get("view")  # payments / receipts

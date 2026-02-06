@@ -65,9 +65,9 @@
 
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-        <h3 style="margin:0; font-weight:600; color:#333;">
+        <h1 style="margin:0; font-weight:600; color:#333;">
             Cash Overview
-        </h3>
+        </h1>
         <a href="{% url 'cash_entry' %}" class="add-cash-button">
             💵 + Add Cash
         </a>
@@ -117,14 +117,14 @@
 <!-- Dynamic Summary Table -->
 <div style="margin:0; padding:0 0 12px 0;">
 
-    <h3 style="
+    <h1 style="
         margin:0 0 8px 0;
         padding:0;
         color:#333;
         font-size:1.6rem;
     ">
         Summary
-    </h3>
+    </h1>
 
     <table 
         id="summary-table"
@@ -240,17 +240,36 @@ function recalcSummaryAfterFilter() {
         <input type="date" id="receipt-end-date" name="receipt-end-date">
     </div>
 
-    <!-- Receipts Table -->
-     <button onclick="exportVisibleRows('receipts-table','Receipts_Report')" 
-        style="background:#218838;color:white;padding:6px 12px;border-radius:4px;margin-bottom:10px;">
-    ⬇ Download Receipts Excel
-</button>
-    <h1>Receipts Table</h1>
+<!-- Receipts Table Header with Download Button -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <h1 style="margin:0; font-weight:600; color:#333;">Receipts Table</h1>
+    <button onclick="exportVisibleRows('receipts-table','Receipts_Report')" 
+        style="
+            background: linear-gradient(135deg, #328b60,#328b60);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        "
+        onmouseover="this.style.background='linear-gradient(135deg, #218838, #1e7e34)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.2)';"
+        onmouseout="this.style.background='linear-gradient(135deg, #28a745, #218838)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';"
+    >
+        ⬇ Download Receipts Excel
+    </button>
+</div>
+  
     <div class="table-container">
         <table class="styled-table" id="receipts-table">
             <thead>
                 <tr>
                     <th>Date</th>
+                    <th>Gen No</th>
+                    <th>Name</th>
                     <th>Loan Id</th>
                     <th>Loan Type</th>
                     <th>Cash</th>
@@ -263,7 +282,27 @@ function recalcSummaryAfterFilter() {
     {% for transaction in transactions %}
         <tr data-date="{{ transaction.created_at|date:'Y-m-d' }}">
             <td>{{ transaction.created_at|date:"d-m-Y" }}</td>
+    <!-- GEN NO -->
+    <td>
+        {% if transaction.loan and transaction.loan.gen_no %}
+            {{ transaction.loan.gen_no }}
+        {% elif transaction.gen_no %}
+            {{ transaction.gen_no }}
+        {% else %}
+            -
+        {% endif %}
+    </td>
 
+    <!-- NAME -->
+    <td>
+        {% if transaction.loan and transaction.loan.name %}
+            {{ transaction.loan.name }}
+        {% elif transaction.name %}
+            {{ transaction.name }}
+        {% else %}
+            -
+        {% endif %}
+    </td>
             {# ===== LOAN ID / CODE (FINAL FIX) ===== #}
             <td>
                 {% if transaction.loan %}
@@ -297,25 +336,47 @@ function recalcSummaryAfterFilter() {
 </tbody>
 
 
-            <tfoot style="background-color:#328b60;">
-                <tr>
-                    <th style="color: white; font-weight: bold;font-size: 20px;">Total</th>
-                    <td></td>
-                    <td></td>
-                    <td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ transactions_totals.total_cash|default:"0.00"|floatformat:2 }}
-</td>
-<td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ transactions_totals.total_bank1|default:"0.00"|floatformat:2 }}
-</td>
-<td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ transactions_totals.total_bank2|default:"0.00"|floatformat:2 }}
-</td>
-<td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ transactions_totals.total_adj|default:"0.00"|floatformat:2 }}
-</td>
-                </tr>
-            </tfoot>
+<tfoot style="background-color:#328b60;">
+    <tr>
+        <!-- Date -->
+        <th style="color:white;font-weight:bold;font-size:20px;">
+            Total
+        </th>
+
+        <!-- Gen No -->
+        <td></td>
+
+        <!-- Name -->
+        <td></td>
+
+        <!-- Loan Id -->
+        <td></td>
+
+        <!-- Loan Type -->
+        <td></td>
+
+        <!-- Cash -->
+        <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+            {{ transactions_totals.total_cash|default:"0.00"|floatformat:2 }}
+        </td>
+
+        <!-- Bank 1 -->
+        <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+            {{ transactions_totals.total_bank1|default:"0.00"|floatformat:2 }}
+        </td>
+
+        <!-- Bank 2 -->
+        <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+            {{ transactions_totals.total_bank2|default:"0.00"|floatformat:2 }}
+        </td>
+
+        <!-- Adjustment -->
+        <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+            {{ transactions_totals.total_adj|default:"0.00"|floatformat:2 }}
+        </td>
+    </tr>
+</tfoot>
+
         </table>
     </div>
     
@@ -327,59 +388,129 @@ function recalcSummaryAfterFilter() {
     </div>
     <!-- Payments Table -->
 
-
+<!-- Payments Table -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <h1 style="margin:0; font-weight:600; color:#333;">Payments Table</h1>
     <button onclick="exportVisibleRows('payments-table','Payments_Report')" 
-        style="background:#218838;color:white;padding:6px 12px;border-radius:4px;margin-bottom:10px;">
-    ⬇ Download Payments Excel
-</button>
-    <h1>Payments Table</h1>
-    <div class="table-container">
-        <table class="styled-table" id="payments-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Loan Id</th>
-                    <th>Loan Type</th>
-                    <th>Cash</th>
-                    <th>Bank 1</th>
-                    <th>Bank 2</th>
-                    <th>Adjustment</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for payment in payments %}
-                   <tr data-date="{{ payment.created_at|date:"Y-m-d" }}">
+        style="
+            background: linear-gradient(135deg,#328b60, #328b60);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        "
+        onmouseover="this.style.background='linear-gradient(135deg, #218838, #1e7e34)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.2)';"
+        onmouseout="this.style.background='linear-gradient(135deg, #28a745, #218838)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';"
+    >
+        ⬇ Download Payments Excel
+    </button>
+</div>
+
+
+<div class="table-container">
+    <table class="styled-table" id="payments-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Gen No</th>
+                <th>Name</th>
+                <th>Loan Id</th>
+                <th>Loan Type</th>
+                <th>Cash</th>
+                <th>Bank 1</th>
+                <th>Bank 2</th>
+                <th>Adjustment</th>
+            </tr>
+        </thead>
+
+<tbody>
+{% for payment in payments %}
+<tr data-date="{{ payment.created_at|date:'Y-m-d' }}">
     <td>{{ payment.created_at|date:"d-m-Y" }}</td>
+
+    <!-- Gen No -->
+    <td>
+        {% if payment.loan and payment.loan.gen_no %}
+            {{ payment.loan.gen_no }}
+        {% elif payment.gen_no %}
+            {{ payment.gen_no }}
+        {% else %}
+            -
+        {% endif %}
+    </td>
+
+    <!-- Name -->
+    <td>
+        {% if payment.loan and payment.loan.name %}
+            {{ payment.loan.name }}
+        {% elif payment.name %}
+            {{ payment.name }}
+        {% else %}
+            -
+        {% endif %}
+    </td>
+
+    <!-- Loan ID -->
     <td>{{ payment.code|default:"-" }}</td>
+
+    <!-- Loan Type -->
     <td>{{ payment.type_of_loan|default:"-" }}</td>
+
+    <!-- Amounts -->
     <td>{{ payment.cash|default:"0.00"|floatformat:2 }}</td>
     <td>{{ payment.bank1|default:"0.00"|floatformat:2 }}</td>
     <td>{{ payment.bank2|default:"0.00"|floatformat:2 }}</td>
     <td>{{ payment.adj|default:"0.00"|floatformat:2 }}</td>
 </tr>
+{% endfor %}
+</tbody>
 
-                {% endfor %}
-            </tbody>
-            <tfoot style="background-color: #328b60;">
-                <tr>
-                    <th style="color: white; font-weight: bold;font-size: 20px;">Total</th>
-                    <td></td>
-                    <td></td>
-                    <td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ payments_totals.total_cash|default:"0.00"|floatformat:2 }}
-</td>
-<td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ payments_totals.total_bank1|default:"0.00"|floatformat:2 }}
-</td>
-<td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ payments_totals.total_bank2|default:"0.00"|floatformat:2 }}
-</td>
-<td style="color: white; font-weight: bold; font-size: 20px;">
-    {{ payments_totals.total_adj|default:"0.00"|floatformat:2 }}
-</td>
+<tfoot style="background-color:#328b60;">
+<tr>
+    <!-- Date -->
+    <th style="color:white;font-weight:bold;font-size:20px;">
+        Total
+    </th>
 
-                </tr>
-            </tfoot>
+    <!-- Gen No -->
+    <td></td>
+
+    <!-- Name -->
+    <td></td>
+
+    <!-- Loan Id -->
+    <td></td>
+
+    <!-- Loan Type -->
+    <td></td>
+
+    <!-- Cash -->
+    <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+        {{ payments_totals.total_cash|default:"0.00"|floatformat:2 }}
+    </td>
+
+    <!-- Bank 1 -->
+    <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+        {{ payments_totals.total_bank1|default:"0.00"|floatformat:2 }}
+    </td>
+
+    <!-- Bank 2 -->
+    <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+        {{ payments_totals.total_bank2|default:"0.00"|floatformat:2 }}
+    </td>
+
+    <!-- Adjustment -->
+    <td style="color:white;font-weight:bold;font-size:20px; text-align:right;">
+        {{ payments_totals.total_adj|default:"0.00"|floatformat:2 }}
+    </td>
+</tr>
+</tfoot>
+
         </table>
     </div>
 </div>

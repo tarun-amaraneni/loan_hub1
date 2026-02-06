@@ -242,7 +242,7 @@ h3 {
             <table class="styled-table">
             <thead>
                 <tr>
-                    <th style="color: yellow;">Date</th> <!-- new column -->
+                    <th >Issue Date</th> <!-- new column -->
                     <th style="color: yellow;">Receipt Type</th>
                     <th style="color: yellow;">Amount</th>
                     <th style="color: yellow;">Cash</th>
@@ -282,7 +282,7 @@ h3 {
             <table class="styled-table">
                 <thead>
     <tr>
-        <th style="color: yellow;">Date</th> <!-- new column -->
+        <th >Issue Date</th> <!-- new column -->
         <th style="color: yellow;">Loan Type</th>
         <th style="color: yellow;">Amount</th>
         <th style="color: yellow;">Cash</th>
@@ -325,8 +325,6 @@ h3 {
             <th>Bank2</th>
             <th>Total</th>
             <th>Edit</th>
-            </a>
-</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -370,62 +368,73 @@ $('input[type="date"]').each(function () {
 });
 
     // ---------------- GEN NO AUTOLOAD + SEARCH ----------------
-    let autoGenNo = "{{ gen_no|default:'' }}" || new URLSearchParams(window.location.search).get('gen_no');
-    if (autoGenNo) {
-        $('#gen_no_input').val(autoGenNo).prop('readonly', true);
-        $('#code_suggestions').hide();
-        $('.submit-button').prop('disabled', false);
+// ---------------- GEN NO AUTOLOAD + SEARCH ----------------
+let autoGenNo = "{{ gen_no|default:'' }}" || new URLSearchParams(window.location.search).get('gen_no');
 
-        // 🔹 Call this to load existing records immediately
-        loadExistingRecords(autoGenNo);
+if (autoGenNo) {
+    $('#gen_no_input').val(autoGenNo).prop('readonly', true);
+    $('#code_suggestions').hide();
+    $('.submit-button').prop('disabled', false);
+    loadExistingRecords(autoGenNo);
+}
+
+// 🔹 COMMON FUNCTION TO FETCH USERS
+function fetchGenNos(query = '') {
+    $.ajax({
+        url: '{% url "search_user_codes" %}',
+        data: { term: query },
+        dataType: 'json',
+        success: function (data) {
+            const dropdown = $('#code_suggestions');
+            dropdown.empty();
+
+            if (data.length) {
+                data.forEach(user => {
+                    dropdown.append(
+                        `<option value="${user.code}">
+                            ${user.code} - [${user.name}]
+                        </option>`
+                    );
+                });
+                dropdown.show();
+            } else {
+                dropdown.hide();
+            }
+        },
+        error: function () {
+            showAlert('Search failed', 'danger');
+        }
+    });
+}
+
+// 🔹 SHOW LIST ON CLICK / FOCUS
+$('#gen_no_input').on('focus click', function () {
+    if ($(this).prop('readonly')) return;
+    fetchGenNos();   // load all initially
+});
+
+// 🔹 FILTER WHILE TYPING
+$('#gen_no_input').on('keyup', function () {
+    if ($(this).prop('readonly')) return;
+    const query = $(this).val();
+    fetchGenNos(query);
+});
+
+// 🔹 SELECT FROM DROPDOWN
+$('#code_suggestions').on('click', 'option', function () {
+    const selectedGenNo = $(this).val();
+    $('#gen_no_input').val(selectedGenNo).prop('readonly', true);
+    $('#code_suggestions').hide();
+    $('.submit-button').prop('disabled', false);
+    loadExistingRecords(selectedGenNo);
+});
+
+// 🔹 HIDE DROPDOWN WHEN CLICKING OUTSIDE
+$(document).on('click', function (e) {
+    if (!$(e.target).closest('#gen_no_input, #code_suggestions').length) {
+        $('#code_suggestions').hide();
     }
-
-    $('#gen_no_input').on('keyup', function () {
-        if ($(this).prop('readonly')) return;
-        const query = $(this).val();
-        if (query.length < 2) { $('#code_suggestions').hide(); $('.submit-button').prop('disabled', true); return; }
-        $.ajax({
-            url: '{% url "search_user_codes" %}',
-            data: { term: query },
-            dataType: 'json',
-            success: function (data) {
-                const dropdown = $('#code_suggestions');
-                dropdown.empty();
-                if (data.length) {
-                    data.forEach(user => dropdown.append(`<option value="${user.code}">${user.code} - [${user.name}]</option>`));
-                    dropdown.show();
-                } else {
-                    dropdown.hide();
-                    showAlert('No Gen No found', 'warning');
-                }
-            },
-            error: function() { showAlert('Search failed', 'danger'); }
-        });
-    });
-
-    $('#code_suggestions').on('click', 'option', function () {
-        const selectedGenNo = $(this).val();
-        $('#gen_no_input').val(selectedGenNo).prop('readonly', true);
-        $('#code_suggestions').hide();
-        $('.submit-button').prop('disabled', false);
-
-        // 🔹 Call this to load records for the selected Gen No
-        loadExistingRecords(selectedGenNo);
-    });
-
-    // Make dropdowns searchable
-$('#receiptForm select[name="type_of_loan"]').select2({
-    placeholder: "Select Receipt Type",
-    allowClear: true,
-    width: '100%'
 });
-
-$('#paymentForm select[name="type_of_loan"]').select2({
-    placeholder: "Select Payment Type",
-    allowClear: true,
-    width: '100%'
-});
-
 
 // Receipts dropdown (search + new option)
 $('#receiptForm select[name="type_of_loan"]').select2({
@@ -596,9 +605,7 @@ $.get("{% url 'fetch_receipts' %}", { gen_no: gen_no }, function(res) {
                 <td>${r.bank1}</td>
                 <td>${r.bank2}</td>
                 <td>${r.amount}</td>
-                <td>
-        <a href="/other-cash/edit/${r.id}/" class="view-btn">Edit</a>
-    </td>
+                <td><a href="/other-cash/edit/${r.id}/" class="view-btn">Edit</a></td>
             </tr>`);
         });
     } else {
@@ -621,9 +628,7 @@ $.get("{% url 'fetch_payments' %}", { gen_no: gen_no }, function(res) {
                 <td>${p.bank1}</td>
                 <td>${p.bank2}</td>
                 <td>${p.amount}</td>
-                <td>
-        <a href="/other-cash/edit/${r.id}/" class="view-btn">Edit</a>
-    </td>
+                <td><a href="/other-cash/edit/${p.id}/" class="view-btn">Edit</a></td>
             </tr>`);
         });
     } else {
