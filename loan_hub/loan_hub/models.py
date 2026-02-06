@@ -78,6 +78,71 @@ class User(models.Model):
     def __str__(self):
         return self.name
 
+# class Loan(models.Model):
+#     LOAN_TYPES = [
+#         ('MTL LOAN', 'MTL LOAN'),
+#         ('FDL LOAN', 'FDL LOAN'),
+#         ('KVP/NSC LOAN', 'KVP/NSC LOAN'),
+#         ('MTL INTEREST', 'MTL INTEREST'),
+#         ('FDL INTEREST', 'FDL INTEREST'),
+#         ('KVP/NSC INTEREST', 'KVP/NSC INTEREST'),
+#         ('FIXED DEPOSITS', 'FIXED DEPOSITS'),
+#         ('THRIFT FUNDS', 'THRIFT FUNDS'),
+#         ('WELFARE COLLECTIONS', 'WELFARE COLLECTIONS'),
+#         ('ADMISSION FEES', 'ADMISSION FEES'),
+#         ('OTHER RECEIPTS', 'OTHER RECEIPTS'),
+#         ('CASH WITHDRAWALS', 'CASH WITHDRAWALS'),
+#         ('SALARY PAID', 'SALARY PAID'),
+#         ('OFFICE EXPENSES', 'OFFICE EXPENSES'),
+#         ('OTHER PAYMENTS', 'OTHER PAYMENTS')
+
+#     ]
+
+#     SOURCE_CHOICES = [
+#         ('RECEIPT', 'Receipt'),
+#         ('PAYMENT', 'Payment'),
+#     ]
+
+#     gen_no = models.CharField(max_length=100)
+#     name = models.CharField(max_length=255, blank=True)
+#     amount = models.DecimalField(max_digits=10, decimal_places=2)
+#     interest = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+#     cash = models.CharField(max_length=10, blank=True, default=0)
+#     online = models.CharField(max_length=100, blank=True, default='-')
+#     bank1 = models.CharField(max_length=100, blank=True, default='-')
+#     bank2 = models.CharField(max_length=100, blank=True, default='-')
+#     adj = models.CharField(max_length=100, blank=True, default='-')
+
+#     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+#     code = models.CharField(max_length=10, blank=True, null=True, unique=True)
+
+#     type_of_loan = models.CharField(max_length=100, choices=LOAN_TYPES)
+#     source = models.CharField(max_length=100, blank=True, default='-')
+
+
+#     created_at = models.DateTimeField(default=datetime.now)
+
+#     loan_status = models.CharField(max_length=50, default='Active')
+
+#     def save(self, *args, **kwargs):
+#         if self.cash in ["", None]:
+#             self.cash = "0"
+#         super().save(*args, **kwargs)
+
+#     def __str__(self):
+#         return self.name
+
+
+
+
+
+from django.db import models
+from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
+from django.utils import timezone
+from django.db.models import F
+from datetime import datetime
+
 class Loan(models.Model):
     LOAN_TYPES = [
         ('MTL LOAN', 'MTL LOAN'),
@@ -95,7 +160,6 @@ class Loan(models.Model):
         ('SALARY PAID', 'SALARY PAID'),
         ('OFFICE EXPENSES', 'OFFICE EXPENSES'),
         ('OTHER PAYMENTS', 'OTHER PAYMENTS')
-
     ]
 
     SOURCE_CHOICES = [
@@ -103,37 +167,85 @@ class Loan(models.Model):
         ('PAYMENT', 'Payment'),
     ]
 
+    EXCLUDED_TYPES = ['ADMISSION FEES', 'OTHER RECEIPTS', 'CASH WITHDRAWALS']
+
     gen_no = models.CharField(max_length=100)
     name = models.CharField(max_length=255, blank=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    interest = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    interest = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
-    cash = models.CharField(max_length=10, blank=True, default=0)
+    cash = models.CharField(max_length=10, blank=True, default="0")
     online = models.CharField(max_length=100, blank=True, default='-')
     bank1 = models.CharField(max_length=100, blank=True, default='-')
     bank2 = models.CharField(max_length=100, blank=True, default='-')
     adj = models.CharField(max_length=100, blank=True, default='-')
 
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     code = models.CharField(max_length=10, blank=True, null=True, unique=True)
 
     type_of_loan = models.CharField(max_length=100, choices=LOAN_TYPES)
     source = models.CharField(max_length=100, blank=True, default='-')
 
+    # created_at = models.DateTimeField(default=datetime.now)  # issue date
+    from django.utils import timezone
 
-    created_at = models.DateTimeField(default=datetime.now)
+    created_at = models.DateTimeField(default=timezone.now)  # issue date
 
+    date = models.DateField(default=timezone.now)            # added today
     loan_status = models.CharField(max_length=50, default='Active')
-
     def save(self, *args, **kwargs):
-        if self.cash in ["", None]:
-            self.cash = "0"
-        super().save(*args, **kwargs)
+        # -----------------------
+        # 1️⃣ Sanitize fields BEFORE save (empty → 0)
+        # -----------------------
+        for field in ["cash", "online", "bank1", "bank2", "adj"]:
+            if getattr(self, field) in ["", None]:
+                setattr(self, field, "0")  # save empty fields as 0
 
-    def __str__(self):
+        is_new = self.pk is None  # Check if new loan
+
+        super().save(*args, **kwargs)  # Save first to get primary key
+
+        # -----------------------
+        # 2️⃣ Backdated interest calculation (total at once)
+        # -----------------------
+        if is_new and self.type_of_loan not in self.EXCLUDED_TYPES and self.amount > 0:
+            # Ensure both are date objects
+            today = self.date
+            start_date = self.created_at.date() if isinstance(self.created_at, datetime) else self.created_at
+            if isinstance(today, datetime):
+                today = today.date()
+
+            # Skip future loans
+            if start_date >= today:
+                print(f"Loan {self.gen_no} is in the future. Interest skipped.")
+                return
+
+            days = (today - start_date).days
+
+            if days > 0:
+                try:
+                    from .models import InterestRate  # Import your InterestRate model
+                    rate_obj = InterestRate.objects.get(Type_of_Receipt=self.type_of_loan)
+                    annual_rate = Decimal(rate_obj.interest) / Decimal('100')
+                except InterestRate.DoesNotExist:
+                    print(f"Rate missing for: {self.type_of_loan}")
+                    return
+
+                # Calculate total interest in one step
+                total_interest = (self.amount * annual_rate * Decimal(days) / Decimal('365')).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP
+                )
+
+                # Update interest in DB
+                Loan.objects.filter(pk=self.pk).update(
+                    interest=F('interest') + total_interest
+                )
+                print(f"Loan {self.gen_no}: Total interest {total_interest} added for {days} days.")
+
+    def _str_(self):
         return self.name
-
-
+    
+    
 
 class InterestRate(models.Model):
     Type_of_Receipt = models.CharField(max_length=100)
@@ -335,6 +447,62 @@ from django.db import models
 from decimal import Decimal
 
 
+# class OtherCashTransaction(models.Model):
+
+#     TRANSACTION_TYPE_CHOICES = [
+#         ('RECEIPT', 'Receipt'),
+#         ('PAYMENT', 'Payment'),
+#     ]
+
+#     transaction_type = models.CharField(
+#         max_length=10,
+#         choices=TRANSACTION_TYPE_CHOICES
+#     )
+
+#     # Gen No (links receipt/payment to user)
+#     gen_no = models.CharField(max_length=50)
+
+#     # Receipt / Payment type
+#     type_of_loan = models.CharField(max_length=100)
+
+#     cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     bank1 = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     bank2 = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+#     # ✅ NEW STORED TOTAL
+#     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+#     code = models.CharField(max_length=20, unique=True, blank=True)
+
+#     # created_at = models.DateTimeField(auto_now_add=True),
+#     created_at = models.DateTimeField(default=datetime.now)
+#     def save(self, *args, **kwargs):
+#         """
+#         Always keep amount = cash + bank1 + bank2
+#         """
+#         self.amount = (
+#             (self.cash or Decimal('0')) +
+#             (self.bank1 or Decimal('0')) +
+#             (self.bank2 or Decimal('0'))
+#         )
+#         super().save(*args, **kwargs)
+
+#     def __str__(self):
+#         return f"{self.gen_no} | {self.transaction_type} | {self.amount}"
+
+
+# OTHER_CASH_PREFIX = {
+#     'RECEIPT': 'RC',
+#     'PAYMENT': 'PM',
+# }
+
+
+
+
+from django.db import models
+from decimal import Decimal
+
+
 class OtherCashTransaction(models.Model):
 
     TRANSACTION_TYPE_CHOICES = [
@@ -349,6 +517,7 @@ class OtherCashTransaction(models.Model):
 
     # Gen No (links receipt/payment to user)
     gen_no = models.CharField(max_length=50)
+    name = models.CharField(max_length=255, blank=True, null=True)
 
     # Receipt / Payment type
     type_of_loan = models.CharField(max_length=100)
@@ -364,6 +533,8 @@ class OtherCashTransaction(models.Model):
 
     # created_at = models.DateTimeField(auto_now_add=True),
     created_at = models.DateTimeField(default=datetime.now)
+    date = models.DateField(auto_now_add=True)
+
     def save(self, *args, **kwargs):
         """
         Always keep amount = cash + bank1 + bank2
@@ -377,8 +548,7 @@ class OtherCashTransaction(models.Model):
 
     def __str__(self):
         return f"{self.gen_no} | {self.transaction_type} | {self.amount}"
-
-
+    
 OTHER_CASH_PREFIX = {
     'RECEIPT': 'RC',
     'PAYMENT': 'PM',
