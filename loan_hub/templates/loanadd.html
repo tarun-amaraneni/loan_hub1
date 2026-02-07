@@ -126,13 +126,34 @@ function setupAutocomplete($row) {
     const $name = $row.find('.nameInput');
 
     $gen.autocomplete({
-        source: "/api/users-autocomplete/",
-        minLength: 1,
+        source: function(request, response) {
+            $.ajax({
+                url: "/api/users-autocomplete/",
+                data: { term: request.term },
+                dataType: "json",
+                success: function(data) {
+                    // Format for jQuery UI
+                    response($.map(data, function(item) {
+                        return {
+                            label: item.code + " - " + item.name,
+                            value: item.code,
+                            name: item.name
+                        };
+                    }));
+                }
+            });
+        },
+        minLength: 0,  // 🔹 allow search on empty string (for focus dropdown)
         select: function(event, ui) {
-            $gen.val(ui.item.code);
+            $gen.val(ui.item.value);
             $name.val(ui.item.name);
             return false;
         }
+    });
+
+    // 🔹 Trigger dropdown on focus
+    $gen.on('focus', function() {
+        $(this).autocomplete("search", $(this).val());
     });
 
     $name.autocomplete({

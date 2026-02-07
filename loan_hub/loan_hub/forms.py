@@ -3,18 +3,17 @@ from .models import User
 from .models import Loan
 from .models import InterestRate
 
+from django import forms
+from .models import User
+
 class UserForm(forms.ModelForm):
+    # Make Mobile and Address optional
+    Mobile = forms.CharField(required=False)
+    Address = forms.CharField(required=False, widget=forms.Textarea)
+
     class Meta:
         model = User
-        fields = ['name', 'Mobile', 'Address','code' #'IFSCcode', 'AccountNo1', 'AccountNo2',
-                  #'IFSCcode2', 'Age', 'Email', 'BankAccountName', 
-                  #'BranchName', 'BankAccountName2', 'BranchName2'
-                  ]
-        widgets = {
-            'Age': forms.NumberInput(attrs={'type': 'number'}),
-            'AccountNo1': forms.NumberInput(attrs={'type': 'number'}),
-            'AccountNo2': forms.NumberInput(attrs={'type': 'number'}),
-        }
+        fields = ['name', 'Mobile', 'Address', 'code']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -22,6 +21,7 @@ class UserForm(forms.ModelForm):
         if not name:
             raise forms.ValidationError('Name is required.')
         return cleaned_data
+
     
 
 class LoanForm(forms.ModelForm):

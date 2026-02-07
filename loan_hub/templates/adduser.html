@@ -12,30 +12,29 @@
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">
-
                     {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
 
-        <!-- Name -->
+        <!-- Name (Required) -->
         <div class="form-group">
             <input type="text" name="name" placeholder="Name" class="input-box" id="name" required>
             <span class="error-message" id="name-error">Name is required</span>
         </div>
 
-        <!-- Mobile -->
+        <!-- Mobile (Optional) -->
         <div class="form-group">
-            <input type="tel" name="Mobile" placeholder="Mobile No." class="input-box" id="mobile" pattern="[0-9]{10}" required>
+            <input type="tel" name="Mobile" placeholder="Mobile No." class="input-box" id="mobile" pattern="[0-9]{10}">
             <span class="error-message" id="mobile-error">Valid 10-digit mobile number is required</span>
         </div>
 
-        <!-- Gen No (optional) -->
+        <!-- Gen No (Optional) -->
         <div class="form-group">
             <input type="text" name="code" placeholder="Gen No (optional)" class="input-box">
         </div>
 
-        <!-- Address -->
+        <!-- Address (Optional) -->
         <div class="form-group">
             <textarea name="Address" placeholder="Address" class="input-box textarea-box"></textarea>
         </div>
@@ -138,7 +137,6 @@
     color: #0c5460;
 }
 
-
 /* ---------- Error message ---------- */
 .error-message {
     color: red;
@@ -149,25 +147,17 @@
 </style>
 
 <script>
-// Client-side validation for required fields
+// Client-side validation: Only Name is required
 document.getElementById('add-user-form').addEventListener('submit', function(e) {
     let valid = true;
 
     const name = document.getElementById('name');
-    const mobile = document.getElementById('mobile');
 
     // Reset error messages
     document.getElementById('name-error').style.display = 'none';
-    document.getElementById('mobile-error').style.display = 'none';
 
     if (!name.value.trim()) {
         document.getElementById('name-error').style.display = 'block';
-        valid = false;
-    }
-
-    const mobilePattern = /^[0-9]{10}$/;
-    if (!mobile.value.trim() || !mobilePattern.test(mobile.value)) {
-        document.getElementById('mobile-error').style.display = 'block';
         valid = false;
     }
 

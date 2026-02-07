@@ -188,47 +188,44 @@ def deposits_view(request):
             user = User.objects.filter(code=gen_no).first()
             user_name = user.name if user else 'Unknown'
 
-            for dep_type in deposit_types:
+        for dep_type in deposit_types:
 
-                loan = Loan.objects.filter(
-                    gen_no=gen_no,
-                    type_of_loan=dep_type,
-                    loan_status='Active'
-                ).first()
+            loans_queryset = Loan.objects.filter(
+                gen_no=gen_no,
+                type_of_loan=dep_type,
+                loan_status='Active'
+            )
 
-                if loan:
-                    repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
-                        total_paid_principal=Coalesce(
-                            Sum('paid_to_principal'), Value(0), output_field=DecimalField()
-                        ),
-                        total_paid_interest=Coalesce(
-                            Sum('paid_to_interest'), Value(0), output_field=DecimalField()
-                        )
+            for loan in loans_queryset:
+                repayments = LoanRepayment.objects.filter(loan=loan).aggregate(
+                    total_paid_principal=Coalesce(
+                        Sum('paid_to_principal'), Value(0), output_field=DecimalField()
+                    ),
+                    total_paid_interest=Coalesce(
+                        Sum('paid_to_interest'), Value(0), output_field=DecimalField()
                     )
+                )
 
-                    total_paid_principal = Decimal(repayments['total_paid_principal'])
-                    total_paid_interest = Decimal(repayments['total_paid_interest'])
+                total_paid_principal = Decimal(repayments['total_paid_principal'])
+                total_paid_interest = Decimal(repayments['total_paid_interest'])
 
-                    remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
-                    remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
+                remaining_principal = Decimal(loan.amount or 0) - total_paid_principal
+                remaining_interest = Decimal(loan.interest or 0) - total_paid_interest
 
-                    # ----------------------------------------
-                    # AUTO CLOSE IF DEPOSIT IS FULLY CLEARED
-                    # ----------------------------------------
-                    if remaining_principal <= 0 and remaining_interest <= 0:
-                        loan.loan_status = "Closed"
-                        loan.save(update_fields=["loan_status"])
-                        continue   # Do NOT show cleared deposits
+                # Auto close if cleared
+                if remaining_principal <= 0 and remaining_interest <= 0:
+                    loan.loan_status = "Closed"
+                    loan.save(update_fields=["loan_status"])
+                    continue   # Skip cleared loans
 
-                    # Add only active deposits
-                    loans.append({
-                        'loan_type': dep_type,
-                        'loan': loan,
-                        'balance': remaining_principal,
-                        'interest': remaining_interest,
-                        'loan_code': loan.code,
-                        
-                    })
+                loans.append({
+                    'loan_type': dep_type,
+                    'loan': loan,
+                    'balance': remaining_principal,
+                    'interest': remaining_interest,
+                    'loan_code': loan.code,
+                })
+
 
         if loan_id:
             try:
@@ -631,6 +628,13 @@ from django.core.mail import send_mail
 from .forms import UserForm
 from .models import User
 import logging
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import UserForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 def add_user(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
@@ -650,6 +654,7 @@ def add_user(request):
         form = UserForm()
 
     return render(request, 'adduser.html', {'form': form})
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def send_loan_email(receiver_email):
@@ -2839,10 +2844,18 @@ def others(request):
         except ValueError:
             return JsonResponse({'status': 'error', 'message': 'Invalid date format'})
 
+
+
+        # 🔹 Fetch user name automatically
+        gen_no = data.get('gen_no').strip()
+        user = User.objects.filter(code=gen_no).first()
+        name = user.name if user else ""
+
         # ---------- CREATE TRANSACTION ----------
         txn = OtherCashTransaction.objects.create(
             transaction_type=data.get('transaction_type'),  # RECEIPT / PAYMENT
             gen_no=data.get('gen_no'),
+            name=name, 
             type_of_loan=data.get('type_of_loan'),
             cash=d(data.get('cash')),
             bank1=d(data.get('bank1')),
@@ -2902,9 +2915,13 @@ from django.http import JsonResponse
 from .models import OtherCashTransaction
 from decimal import Decimal
 
+from decimal import Decimal
+from django.http import JsonResponse
+from .models import User, OtherCashTransaction
+
 def save_other_cash_transaction(request):
     if request.method == "POST":
-        gen_no = request.POST.get("gen_no")
+        gen_no = request.POST.get("gen_no", "").strip()
         transaction_type = request.POST.get("transaction_type")
         type_of_loan = request.POST.get("type_of_loan")
         cash = request.POST.get("cash") or '0'
@@ -2918,19 +2935,30 @@ def save_other_cash_transaction(request):
         except:
             return JsonResponse({"status":"error", "message":"Invalid input"})
 
+        # 🔹 Fetch user name
+        try:
+            user = User.objects.get(code=gen_no)
+            name = user.name
+        except User.DoesNotExist:
+            name = ""
+            print(f"User with code={gen_no} not found!")  # debug
+
+        print(f"Saving transaction: gen_no={gen_no}, name={name}, type={transaction_type}")
+
+        # 🔹 Save transaction
         OtherCashTransaction.objects.create(
             gen_no=gen_no,
+            name=name,
             transaction_type=transaction_type,
             type_of_loan=type_of_loan,
             cash=cash,
             bank1=bank1,
             bank2=bank2
-            # amount will be calculated automatically in save()
         )
-        return JsonResponse({"status":"success"})
+
+        return JsonResponse({"status":"success", "name": name})
 
     return JsonResponse({"status":"error", "message":"Invalid request"})
-
 
 
 def other_reports_table(request):

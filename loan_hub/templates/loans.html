@@ -313,6 +313,7 @@
             <option value="KVP/NSC LOAN">KVP/NSC LOAN</option>
         </select>
     </td>
+    
 
     <td><input type="text" class="editable" name="Amount" placeholder="Amount"></td>
     <td><input type="text" class="editable" name="Cash" placeholder="Cash"></td>
@@ -347,6 +348,7 @@ function getTodayDate() {
 }
 
 $(document).ready(function() {
+    
     const $input = $('#gen_no_input');
     const $dropdown = $('#code_suggestions');
 
@@ -403,7 +405,7 @@ $(document).ready(function() {
             $dropdown.hide();
         }
     });
-
+    
     // ====================== Save Buttons for Receipts ======================
     const saveButtons = document.querySelectorAll('.save-btn');
 
@@ -599,6 +601,9 @@ function showAlert(message, type) {
 //         });
 //     });
 // });
+
+
+
 
 </script>
 
